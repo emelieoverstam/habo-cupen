@@ -69,6 +69,120 @@ export type Database = {
           },
         ]
       }
+      matches: {
+        Row: {
+          away_score: number | null
+          away_team: string
+          created_at: string
+          cupmate_match_id: number
+          day: string | null
+          group_name: string
+          home_score: number | null
+          home_team: string
+          id: string
+          match_no: number | null
+          pitch: string | null
+          stage: string
+          starts_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          away_score?: number | null
+          away_team: string
+          created_at?: string
+          cupmate_match_id: number
+          day?: string | null
+          group_name: string
+          home_score?: number | null
+          home_team: string
+          id?: string
+          match_no?: number | null
+          pitch?: string | null
+          stage?: string
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          away_score?: number | null
+          away_team?: string
+          created_at?: string
+          cupmate_match_id?: number
+          day?: string | null
+          group_name?: string
+          home_score?: number | null
+          home_team?: string
+          id?: string
+          match_no?: number | null
+          pitch?: string | null
+          stage?: string
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      standings: {
+        Row: {
+          drawn: number
+          goal_diff: number | null
+          goals: string | null
+          group_name: string
+          id: string
+          lost: number
+          played: number
+          points: number
+          position: number
+          team_name: string
+          updated_at: string
+          won: number
+        }
+        Insert: {
+          drawn?: number
+          goal_diff?: number | null
+          goals?: string | null
+          group_name: string
+          id?: string
+          lost?: number
+          played?: number
+          points?: number
+          position: number
+          team_name: string
+          updated_at?: string
+          won?: number
+        }
+        Update: {
+          drawn?: number
+          goal_diff?: number | null
+          goals?: string | null
+          group_name?: string
+          id?: string
+          lost?: number
+          played?: number
+          points?: number
+          position?: number
+          team_name?: string
+          updated_at?: string
+          won?: number
+        }
+        Relationships: []
+      }
+      sync_state: {
+        Row: {
+          id: number
+          last_status: string | null
+          last_synced_at: string | null
+        }
+        Insert: {
+          id?: number
+          last_status?: string | null
+          last_synced_at?: string | null
+        }
+        Update: {
+          id?: number
+          last_status?: string | null
+          last_synced_at?: string | null
+        }
+        Relationships: []
+      }
       teams: {
         Row: {
           color: string

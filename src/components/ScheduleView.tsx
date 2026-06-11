@@ -1,12 +1,15 @@
 "use client";
 
-// Publik schemavy: dagflikar, lagfilter och eventlista som uppdateras live
-// via Supabase Realtime. Initial data kommer från servern.
+// Publik schemavy: dagflikar, lagfilter, eventlista och cupmatcher med
+// resultat och tabeller. Initial data kommer från servern; uppdateringar
+// kommer live via Supabase Realtime (broadcast från databasen). Klienten
+// pingar dessutom /api/sync så att Cupmate-datat hålls färskt.
 
 import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -16,12 +19,22 @@ import type { Tables } from "@/types/database";
 
 type Team = Tables<"teams">;
 type CupEvent = Tables<"events">;
+type Match = Tables<"matches">;
+type Standing = Tables<"standings">;
+
+type TimelineItem =
+  | { kind: "event"; time: string | null; event: CupEvent }
+  | { kind: "match"; time: string | null; match: Match };
 
 type Props = {
   initialTeams: Team[];
   initialEvents: CupEvent[];
+  initialMatches: Match[];
+  initialStandings: Standing[];
   today: string;
 };
+
+const SYNC_INTERVAL_MS = 3 * 60 * 1000;
 
 const timeFormat = new Intl.DateTimeFormat("sv-SE", {
   hour: "2-digit",
@@ -42,7 +55,12 @@ const rangeFormat = new Intl.DateTimeFormat("sv-SE", {
   month: "long",
 });
 
-/* Datumintervall för rubriken, t.ex. "12–14 juni" eller "30 maj – 1 juni" */
+/* Tolka en dag (ÅÅÅÅ-MM-DD) mitt på dagen så att veckodagen blir rätt oavsett tidszon */
+function dayToDate(day: string) {
+  return new Date(`${day}T12:00:00`);
+}
+
+/* Datumintervall för rubriken, t.ex. "27–28 juni" eller "30 maj – 1 juni" */
 function dateRangeLabel(days: string[]) {
   if (days.length === 0) return null;
   const first = dayToDate(days[0]);
@@ -51,11 +69,6 @@ function dateRangeLabel(days: string[]) {
   return first.getMonth() === last.getMonth()
     ? `${first.getDate()}–${rangeFormat.format(last)}`
     : `${rangeFormat.format(first)} – ${rangeFormat.format(last)}`;
-}
-
-/* Tolka en dag (ÅÅÅÅ-MM-DD) mitt på dagen så att veckodagen blir rätt oavsett tidszon */
-function dayToDate(day: string) {
-  return new Date(`${day}T12:00:00`);
 }
 
 /* Minutklocka som är hydration-säker: servern renderar null, klienten tickar varje minut */
@@ -73,30 +86,41 @@ function useCurrentMinute() {
   return minuteStamp === null ? null : new Date(minuteStamp * 60_000);
 }
 
-function sortEvents(a: CupEvent, b: CupEvent) {
-  if (a.starts_at && b.starts_at && a.starts_at !== b.starts_at) {
-    return a.starts_at < b.starts_at ? -1 : 1;
-  }
-  if (!!a.starts_at !== !!b.starts_at) return a.starts_at ? -1 : 1;
-  return (a.sort_hint ?? 0) - (b.sort_hint ?? 0);
+function sortItems(a: TimelineItem, b: TimelineItem) {
+  if (a.time && b.time && a.time !== b.time) return a.time < b.time ? -1 : 1;
+  if (!!a.time !== !!b.time) return a.time ? -1 : 1;
+  const hintA = a.kind === "event" ? (a.event.sort_hint ?? 0) : 0;
+  const hintB = b.kind === "event" ? (b.event.sort_hint ?? 0) : 0;
+  return hintA - hintB;
+}
+
+function itemKey(item: TimelineItem) {
+  return item.kind === "event" ? item.event.id : item.match.id;
 }
 
 export default function ScheduleView({
   initialTeams,
   initialEvents,
+  initialMatches,
+  initialStandings,
   today,
 }: Props) {
   const supabase = useMemo(() => createClient(), []);
   const [events, setEvents] = useState(initialEvents);
+  const [matches, setMatches] = useState(initialMatches);
+  const [standings, setStandings] = useState(initialStandings);
   const [teams] = useState(initialTeams);
   const [teamFilter, setTeamFilter] = useState<string | null>(null);
   // null under SSR/hydration, därefter aktuell tid som tickar varje minut
   const now = useCurrentMinute();
 
-  const days = useMemo(
-    () => [...new Set(events.map((e) => e.day))].sort(),
-    [events]
-  );
+  const days = useMemo(() => {
+    const all = [
+      ...events.map((e) => e.day),
+      ...matches.map((m) => m.day),
+    ].filter((d): d is string => d !== null);
+    return [...new Set(all)].sort();
+  }, [events, matches]);
 
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const activeDay =
@@ -106,14 +130,27 @@ export default function ScheduleView({
         ? today
         : days[0];
 
-  // Prenumerera på ändringar i events och hämta om listan vid varje ändring
-  const refreshEvents = useCallback(async () => {
-    const { data } = await supabase.from("events").select("*");
-    if (data) setEvents(data);
+  // Hämta om all data — anropas när databasen broadcastar en ändring
+  const refreshData = useCallback(async () => {
+    const [eventsRes, matchesRes, standingsRes] = await Promise.all([
+      supabase.from("events").select("*"),
+      supabase.from("matches").select("*"),
+      supabase.from("standings").select("*").order("position"),
+    ]);
+    if (eventsRes.data) setEvents(eventsRes.data);
+    if (matchesRes.data) setMatches(matchesRes.data);
+    if (standingsRes.data) setStandings(standingsRes.data);
   }, [supabase]);
 
+  // Samla ihop broadcast-skurar (synken rör många rader) till en omhämtning
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queueRefresh = useCallback(() => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    refreshTimer.current = setTimeout(refreshData, 400);
+  }, [refreshData]);
+
   useEffect(() => {
-    // Databasen sänder ändringar till topicen "schedule" via en trigger
+    // Databasen sänder ändringar till topicen "schedule" via triggrar
     // (realtime.broadcast_changes). Kanalen är privat, så klienten måste
     // först autentisera sig mot Realtime — anon räcker enligt RLS-policyn.
     const channel = supabase.channel("schedule", {
@@ -123,42 +160,74 @@ export default function ScheduleView({
     supabase.realtime.setAuth().then(() => {
       channel
         .on("broadcast", { event: "*" }, () => {
-          refreshEvents();
+          queueRefresh();
         })
         .subscribe();
     });
 
     return () => {
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
       supabase.removeChannel(channel);
     };
-  }, [supabase, refreshEvents]);
+  }, [supabase, queueRefresh]);
+
+  // Pinga synken: servern hämtar bara från Cupmate om datat är äldre än 2 min
+  useEffect(() => {
+    const ping = () => {
+      fetch("/api/sync", { method: "POST" }).catch(() => {});
+    };
+    ping();
+    const timer = setInterval(ping, SYNC_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, []);
 
   const teamById = useMemo(
     () => new Map(teams.map((t) => [t.id, t])),
     [teams]
   );
 
-  const dayEvents = useMemo(() => {
-    return events
+  /* Vilket av våra lag spelar i en match? Lagnamnen matchar Cupmates exakt. */
+  const matchTeam = useCallback(
+    (match: Match) =>
+      teams.find(
+        (t) => t.name === match.home_team || t.name === match.away_team
+      ),
+    [teams]
+  );
+
+  const dayItems = useMemo(() => {
+    const eventItems: TimelineItem[] = events
       .filter((e) => e.day === activeDay)
       .filter(
         (e) => !teamFilter || e.team_id === null || e.team_id === teamFilter
       )
-      .sort(sortEvents);
-  }, [events, activeDay, teamFilter]);
+      .map((e) => ({ kind: "event", time: e.starts_at, event: e }));
 
-  // Nästa kommande event i dag — markeras med "Härnäst"
-  const nextEventId = useMemo(() => {
+    const matchItems: TimelineItem[] = matches
+      .filter((m) => m.day === activeDay)
+      .filter((m) => {
+        if (!teamFilter) return true;
+        const team = teamById.get(teamFilter);
+        return (
+          !!team &&
+          (m.home_team === team.name || m.away_team === team.name)
+        );
+      })
+      .map((m) => ({ kind: "match", time: m.starts_at, match: m }));
+
+    return [...eventItems, ...matchItems].sort(sortItems);
+  }, [events, matches, activeDay, teamFilter, teamById]);
+
+  // Nästa kommande punkt i dag — markeras med "Härnäst"
+  const nextItemKey = useMemo(() => {
     if (!now || activeDay !== today) return null;
-    return (
-      dayEvents.find(
-        (e) =>
-          e.status !== "cancelled" &&
-          e.starts_at &&
-          new Date(e.starts_at) > now
-      )?.id ?? null
-    );
-  }, [dayEvents, now, activeDay, today]);
+    const next = dayItems.find((item) => {
+      if (item.kind === "event" && item.event.status === "cancelled")
+        return false;
+      return !!item.time && new Date(item.time) > now;
+    });
+    return next ? itemKey(next) : null;
+  }, [dayItems, now, activeDay, today]);
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-16">
@@ -180,7 +249,7 @@ export default function ScheduleView({
             className="live-dot inline-block h-2.5 w-2.5 rounded-full bg-grass"
             aria-hidden
           />
-          Schemat uppdateras live
+          Schema, resultat och tabeller uppdateras live
         </p>
       </header>
 
@@ -242,23 +311,39 @@ export default function ScheduleView({
             {headingFormat.format(dayToDate(activeDay))}
           </h2>
 
-          {dayEvents.length === 0 ? (
+          {dayItems.length === 0 ? (
             <p className="rounded-xl border-2 border-dashed border-ink/40 px-4 py-8 text-center font-semibold text-ink/60">
               Inget inplanerat den här dagen ännu.
             </p>
           ) : (
             <ol className="space-y-3">
-              {dayEvents.map((event, index) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  team={event.team_id ? teamById.get(event.team_id) : undefined}
-                  isNext={event.id === nextEventId}
-                  delayMs={index * 40}
-                />
-              ))}
+              {dayItems.map((item, index) =>
+                item.kind === "event" ? (
+                  <EventCard
+                    key={item.event.id}
+                    event={item.event}
+                    team={
+                      item.event.team_id
+                        ? teamById.get(item.event.team_id)
+                        : undefined
+                    }
+                    isNext={itemKey(item) === nextItemKey}
+                    delayMs={index * 40}
+                  />
+                ) : (
+                  <MatchCard
+                    key={item.match.id}
+                    match={item.match}
+                    team={matchTeam(item.match)}
+                    isNext={itemKey(item) === nextItemKey}
+                    delayMs={index * 40}
+                  />
+                )
+              )}
             </ol>
           )}
+
+          <StandingsSection standings={standings} teams={teams} />
         </>
       )}
     </main>
@@ -294,6 +379,28 @@ function FilterChip({
       )}
       {label}
     </button>
+  );
+}
+
+function NextBadge() {
+  return (
+    <span className="rounded-full border-2 border-ink bg-sun px-2 py-0.5 text-xs font-bold uppercase">
+      Härnäst
+    </span>
+  );
+}
+
+function TeamMarker({ team }: { team?: Tables<"teams"> }) {
+  if (!team) return <span className="font-semibold">Båda lagen</span>;
+  return (
+    <span className="inline-flex items-center gap-1 font-semibold">
+      <span
+        className="inline-block h-2 w-2 rounded-full border border-ink"
+        style={{ backgroundColor: team.color }}
+        aria-hidden
+      />
+      {team.name.replace("BK Zeros ", "")}
+    </span>
   );
 }
 
@@ -345,11 +452,7 @@ function EventCard({
             >
               {event.title}
             </h3>
-            {isNext && (
-              <span className="rounded-full border-2 border-ink bg-sun px-2 py-0.5 text-xs font-bold uppercase">
-                Härnäst
-              </span>
-            )}
+            {isNext && <NextBadge />}
             {event.status === "tbd" && (
               <span className="rounded-full border-2 border-ink bg-sky px-2 py-0.5 text-xs font-bold uppercase">
                 Prel. tid
@@ -366,18 +469,7 @@ function EventCard({
             {meta.label}
             {event.location && <> · {event.location}</>}
             {" · "}
-            {team ? (
-              <span className="inline-flex items-center gap-1 font-semibold">
-                <span
-                  className="inline-block h-2 w-2 rounded-full border border-ink"
-                  style={{ backgroundColor: team.color }}
-                  aria-hidden
-                />
-                {team.name}
-              </span>
-            ) : (
-              <span className="font-semibold">Båda lagen</span>
-            )}
+            <TeamMarker team={team} />
           </p>
 
           {event.note && (
@@ -388,6 +480,171 @@ function EventCard({
         </div>
       </div>
     </li>
+  );
+}
+
+function MatchCard({
+  match,
+  team,
+  isNext,
+  delayMs,
+}: {
+  match: Match;
+  team?: Team;
+  isNext: boolean;
+  delayMs: number;
+}) {
+  const meta = EVENT_META.match;
+  const played = match.home_score !== null && match.away_score !== null;
+
+  return (
+    <li
+      className="rise relative overflow-hidden rounded-xl border-2 border-ink bg-white shadow-hard"
+      style={{ animationDelay: `${delayMs}ms` }}
+    >
+      <div
+        className="absolute inset-y-0 left-0 w-2"
+        style={{ backgroundColor: meta.color }}
+        aria-hidden
+      />
+      <div className="flex items-start gap-3 py-3 pl-5 pr-4">
+        <div className="w-14 shrink-0 text-center">
+          <p className="font-[family-name:var(--font-display)] text-xl leading-tight">
+            {match.starts_at
+              ? timeFormat.format(new Date(match.starts_at))
+              : "–"}
+          </p>
+          <p className="text-lg" aria-hidden>
+            {meta.emoji}
+          </p>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h3 className="text-base font-bold leading-snug">
+              {match.home_team} – {match.away_team}
+            </h3>
+            {isNext && <NextBadge />}
+          </div>
+
+          <p className="mt-0.5 text-sm text-ink/70">
+            {match.group_name}
+            {match.pitch && <> · Plan {match.pitch}</>}
+            {" · "}
+            <TeamMarker team={team} />
+          </p>
+        </div>
+
+        {played && (
+          <div className="shrink-0 self-center rounded-lg border-2 border-ink bg-sun px-2.5 py-1 font-[family-name:var(--font-display)] text-xl shadow-hard-sm">
+            {match.home_score}–{match.away_score}
+          </div>
+        )}
+      </div>
+    </li>
+  );
+}
+
+function StandingsSection({
+  standings,
+  teams,
+}: {
+  standings: Standing[];
+  teams: Team[];
+}) {
+  const groups = useMemo(() => {
+    const byGroup = new Map<string, Standing[]>();
+    for (const row of standings) {
+      const list = byGroup.get(row.group_name) ?? [];
+      list.push(row);
+      byGroup.set(row.group_name, list);
+    }
+    for (const list of byGroup.values()) {
+      list.sort((a, b) => a.position - b.position);
+    }
+    return [...byGroup.entries()].sort(([a], [b]) => a.localeCompare(b, "sv"));
+  }, [standings]);
+
+  if (groups.length === 0) return null;
+
+  return (
+    <section className="mt-10">
+      <h2 className="mb-4 font-[family-name:var(--font-display)] text-2xl uppercase">
+        Tabeller
+      </h2>
+      <div className="space-y-4">
+        {groups.map(([groupName, rows]) => {
+          const ourTeam = teams.find((t) =>
+            rows.some((r) => r.team_name === t.name)
+          );
+          return (
+            <div
+              key={groupName}
+              className="rise overflow-hidden rounded-xl border-2 border-ink bg-white shadow-hard"
+            >
+              <p className="flex items-center justify-between border-b-2 border-ink bg-paper px-4 py-2 font-[family-name:var(--font-display)] text-lg uppercase">
+                {groupName}
+                {ourTeam && (
+                  <span className="text-sm normal-case">
+                    <TeamMarker team={ourTeam} />
+                  </span>
+                )}
+              </p>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-ink/20 text-left text-xs uppercase text-ink/60">
+                    <th className="py-1.5 pl-4 pr-2 font-bold">Lag</th>
+                    <th className="px-1.5 text-center font-bold">S</th>
+                    <th className="px-1.5 text-center font-bold">V</th>
+                    <th className="px-1.5 text-center font-bold">O</th>
+                    <th className="px-1.5 text-center font-bold">F</th>
+                    <th className="px-1.5 text-center font-bold">+/−</th>
+                    <th className="py-1.5 pl-1.5 pr-4 text-center font-bold">
+                      P
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => {
+                    const ours = teams.some((t) => t.name === row.team_name);
+                    return (
+                      <tr
+                        key={row.team_name}
+                        className={`border-b border-ink/10 last:border-0 ${
+                          ours ? "bg-sun/30 font-bold" : ""
+                        }`}
+                      >
+                        <td className="truncate py-2 pl-4 pr-2">
+                          {row.position}. {row.team_name}
+                        </td>
+                        <td className="px-1.5 text-center tabular-nums">
+                          {row.played}
+                        </td>
+                        <td className="px-1.5 text-center tabular-nums">
+                          {row.won}
+                        </td>
+                        <td className="px-1.5 text-center tabular-nums">
+                          {row.drawn}
+                        </td>
+                        <td className="px-1.5 text-center tabular-nums">
+                          {row.lost}
+                        </td>
+                        <td className="px-1.5 text-center tabular-nums">
+                          {row.goal_diff}
+                        </td>
+                        <td className="py-2 pl-1.5 pr-4 text-center font-bold tabular-nums">
+                          {row.points}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

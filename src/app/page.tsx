@@ -4,7 +4,12 @@ import ScheduleView from "@/components/ScheduleView";
 export default async function Home() {
   const supabase = await createClient();
 
-  const [{ data: teams }, { data: events }] = await Promise.all([
+  const [
+    { data: teams },
+    { data: events },
+    { data: matches },
+    { data: standings },
+  ] = await Promise.all([
     supabase.from("teams").select("*").order("name"),
     supabase
       .from("events")
@@ -12,6 +17,8 @@ export default async function Home() {
       .order("day")
       .order("starts_at", { nullsFirst: false })
       .order("sort_hint"),
+    supabase.from("matches").select("*").order("starts_at"),
+    supabase.from("standings").select("*").order("position"),
   ]);
 
   // Dagens datum i svensk tidszon (sv-SE ger formatet ÅÅÅÅ-MM-DD)
@@ -23,6 +30,8 @@ export default async function Home() {
     <ScheduleView
       initialTeams={teams ?? []}
       initialEvents={events ?? []}
+      initialMatches={matches ?? []}
+      initialStandings={standings ?? []}
       today={today}
     />
   );
