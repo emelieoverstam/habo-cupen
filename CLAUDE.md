@@ -1,1 +1,7 @@
 @AGENTS.md
+
+## Lärdomar
+
+- **Supabase Realtime i nya projekt (2026): `postgres_changes` levereras inte.** Klienten får `SUBSCRIBED` men inga händelser kommer fram, och `realtime.subscription` förblir tom — ingen CDC-ström startas för tenanten. Använd i stället **Broadcast från databasen**: en trigger som anropar `realtime.broadcast_changes()` till en topic, en RLS-policy på `realtime.messages` (`to anon, authenticated` för publika lyssnare) och en privat kanal på klienten (`config: { private: true }` + `await supabase.realtime.setAuth()` före `subscribe()`). Se `supabase/migrations/0002_realtime_broadcast.sql` och `src/components/ScheduleView.tsx`.
+- **Revoka EXECUTE på SECURITY DEFINER-triggerfunktioner** (`revoke execute ... from public, anon, authenticated`) — annars exponeras de via PostgREST RPC. Triggern fortsätter fungera eftersom den körs som tabellägaren.
+- **ESLint-regeln `react-hooks/set-state-in-effect`** stoppar mönstret "sätt klockan i en useEffect". Använd `useSyncExternalStore` med `getServerSnapshot = () => null` för en hydration-säker minutklocka.

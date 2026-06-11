@@ -1,26 +1,85 @@
 @import "tailwindcss";
 
+/* Färgpalett: papper-beige grund, bläcksvart text och gul som dominant accent */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #f2edd9;
+  --ink: #1a1813;
+  --sun: #f7c433;
+  --grass: #29a166;
+  --coral: #ed7354;
+  --sky: #6ec4cc;
+  --rose: #ed82a3;
+  --lilac: #d1a1c9;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-sun: var(--sun);
+  --color-grass: var(--grass);
+  --color-coral: var(--coral);
+  --color-sky: var(--sky);
+  --color-rose: var(--rose);
+  --color-lilac: var(--lilac);
+  --font-display: var(--font-anton);
+  --font-sans: var(--font-archivo);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--ink);
+  /* Diskret prickraster ovanpå pappersfärgen ger affischkänsla utan att störa läsbarheten */
+  background-color: var(--paper);
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--ink) 7%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
+  font-family: var(--font-archivo), sans-serif;
+}
+
+/* Hård skugga i affischstil — används på kort och knappar */
+.shadow-hard {
+  box-shadow: 4px 4px 0 0 var(--ink);
+}
+
+.shadow-hard-sm {
+  box-shadow: 2px 2px 0 0 var(--ink);
+}
+
+/* Intåg underifrån, stegras per kort via animation-delay */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise {
+  animation: rise 0.45s ease-out both;
+}
+
+/* Pulserande "live"-prick */
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.live-dot {
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .live-dot {
+    animation: none;
+  }
 }
