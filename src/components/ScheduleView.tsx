@@ -273,8 +273,8 @@ export default function ScheduleView({
                     aria-pressed={active}
                     className={`flex-1 rounded-xl border-2 border-ink px-3 py-2 font-[family-name:var(--font-display)] text-lg uppercase transition-transform active:scale-95 ${
                       active
-                        ? "bg-ink text-sun shadow-hard-sm"
-                        : "bg-paper hover:bg-sun/40"
+                        ? "bg-grass shadow-hard-sm"
+                        : "bg-paper hover:bg-grass/25"
                     }`}
                   >
                     {tabFormat.format(dayToDate(day))}
@@ -307,7 +307,7 @@ export default function ScheduleView({
             )}
           </nav>
 
-          <h2 className="mb-4 font-[family-name:var(--font-display)] text-2xl uppercase">
+          <h2 className="mb-4 inline-block border-b-4 border-grass pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase">
             {headingFormat.format(dayToDate(activeDay))}
           </h2>
 
@@ -367,7 +367,7 @@ function FilterChip({
       onClick={onClick}
       aria-pressed={active}
       className={`inline-flex items-center gap-1.5 rounded-full border-2 border-ink px-3 py-1 text-sm font-bold transition-transform active:scale-95 ${
-        active ? "bg-ink text-paper shadow-hard-sm" : "bg-paper hover:bg-sun/40"
+        active ? "bg-grass shadow-hard-sm" : "bg-paper hover:bg-grass/25"
       }`}
     >
       {color && (
@@ -384,7 +384,7 @@ function FilterChip({
 
 function NextBadge() {
   return (
-    <span className="rounded-full border-2 border-ink bg-sun px-2 py-0.5 text-xs font-bold uppercase">
+    <span className="rounded-full border-2 border-ink bg-grass px-2 py-0.5 text-xs font-bold uppercase">
       Härnäst
     </span>
   );
@@ -569,7 +569,7 @@ function StandingsSection({
 
   return (
     <section className="mt-10">
-      <h2 className="mb-4 font-[family-name:var(--font-display)] text-2xl uppercase">
+      <h2 className="mb-4 inline-block border-b-4 border-grass pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase">
         Tabeller
       </h2>
       <div className="space-y-4">
@@ -582,7 +582,7 @@ function StandingsSection({
               key={groupName}
               className="rise overflow-hidden rounded-xl border-2 border-ink bg-white shadow-hard"
             >
-              <p className="flex items-center justify-between border-b-2 border-ink bg-paper px-4 py-2 font-[family-name:var(--font-display)] text-lg uppercase">
+              <p className="flex items-center justify-between border-b-2 border-ink bg-grass px-4 py-2 font-[family-name:var(--font-display)] text-lg uppercase">
                 {groupName}
                 {ourTeam && (
                   <span className="text-sm normal-case">

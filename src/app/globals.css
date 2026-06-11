@@ -27,11 +27,11 @@
 
 body {
   color: var(--ink);
-  /* Diskret prickraster ovanpå pappersfärgen ger affischkänsla utan att störa läsbarheten */
+  /* Diskret grönt prickraster ovanpå pappersfärgen ger affischkänsla utan att störa läsbarheten */
   background-color: var(--paper);
   background-image: radial-gradient(
-    color-mix(in srgb, var(--ink) 7%, transparent) 1px,
-    transparent 1px
+    color-mix(in srgb, var(--grass) 22%, transparent) 1.5px,
+    transparent 1.5px
   );
   background-size: 22px 22px;
   font-family: var(--font-archivo), sans-serif;
