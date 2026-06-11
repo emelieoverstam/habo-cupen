@@ -13,6 +13,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { EVENT_META } from "@/lib/event-meta";
 import type { Tables } from "@/types/database";
@@ -21,6 +22,7 @@ type Team = Tables<"teams">;
 type CupEvent = Tables<"events">;
 type Match = Tables<"matches">;
 type Standing = Tables<"standings">;
+type Player = Tables<"players">;
 
 type TimelineItem =
   | { kind: "event"; time: string | null; event: CupEvent }
@@ -31,6 +33,7 @@ type Props = {
   initialEvents: CupEvent[];
   initialMatches: Match[];
   initialStandings: Standing[];
+  initialPlayers: Player[];
   today: string;
 };
 
@@ -103,12 +106,14 @@ export default function ScheduleView({
   initialEvents,
   initialMatches,
   initialStandings,
+  initialPlayers,
   today,
 }: Props) {
   const supabase = useMemo(() => createClient(), []);
   const [events, setEvents] = useState(initialEvents);
   const [matches, setMatches] = useState(initialMatches);
   const [standings, setStandings] = useState(initialStandings);
+  const [players, setPlayers] = useState(initialPlayers);
   const [teams] = useState(initialTeams);
   const [teamFilter, setTeamFilter] = useState<string | null>(null);
   // null under SSR/hydration, därefter aktuell tid som tickar varje minut
@@ -132,14 +137,21 @@ export default function ScheduleView({
 
   // Hämta om all data — anropas när databasen broadcastar en ändring
   const refreshData = useCallback(async () => {
-    const [eventsRes, matchesRes, standingsRes] = await Promise.all([
-      supabase.from("events").select("*"),
-      supabase.from("matches").select("*"),
-      supabase.from("standings").select("*").order("position"),
-    ]);
+    const [eventsRes, matchesRes, standingsRes, playersRes] =
+      await Promise.all([
+        supabase.from("events").select("*"),
+        supabase.from("matches").select("*"),
+        supabase.from("standings").select("*").order("position"),
+        supabase
+          .from("players")
+          .select("*")
+          .order("number", { nullsFirst: false })
+          .order("name"),
+      ]);
     if (eventsRes.data) setEvents(eventsRes.data);
     if (matchesRes.data) setMatches(matchesRes.data);
     if (standingsRes.data) setStandings(standingsRes.data);
+    if (playersRes.data) setPlayers(playersRes.data);
   }, [supabase]);
 
   // Samla ihop broadcast-skurar (synken rör många rader) till en omhämtning
@@ -344,8 +356,20 @@ export default function ScheduleView({
           )}
 
           <StandingsSection standings={standings} teams={teams} />
+
+          <SquadSection
+            players={players}
+            teams={teams}
+            teamFilter={teamFilter}
+          />
         </>
       )}
+
+      <footer className="mt-12 text-center text-sm font-semibold text-ink/40">
+        <a href="/admin" className="hover:text-ink/70">
+          Ledarinloggning
+        </a>
+      </footer>
     </main>
   );
 }
@@ -644,6 +668,84 @@ function StandingsSection({
           );
         })}
       </div>
+    </section>
+  );
+}
+
+function SquadSection({
+  players,
+  teams,
+  teamFilter,
+}: {
+  players: Player[];
+  teams: Team[];
+  teamFilter: string | null;
+}) {
+  const visibleTeams = teamFilter
+    ? teams.filter((t) => t.id === teamFilter)
+    : teams;
+  const hasPlayers = visibleTeams.some((t) =>
+    players.some((p) => p.team_id === t.id)
+  );
+  if (!hasPlayers) return null;
+
+  return (
+    <section className="mt-10">
+      <h2 className="mb-4 inline-block border-b-4 border-grass pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase">
+        Trupperna
+      </h2>
+
+      {visibleTeams.map((team) => {
+        const squad = players.filter((p) => p.team_id === team.id);
+        if (squad.length === 0) return null;
+        return (
+          <div key={team.id} className="mb-7">
+            <h3 className="mb-3 flex items-center gap-2 font-[family-name:var(--font-display)] text-xl uppercase">
+              <span
+                className="inline-block h-3.5 w-3.5 rounded-full border-2 border-ink"
+                style={{ backgroundColor: team.color }}
+                aria-hidden
+              />
+              {team.name}
+            </h3>
+            <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+              {squad.map((player, index) => (
+                <li
+                  key={player.id}
+                  className="rise"
+                  style={{ animationDelay: `${index * 30}ms` }}
+                >
+                  <div className="relative">
+                    <div className="relative aspect-square overflow-hidden rounded-xl border-2 border-ink bg-white shadow-hard-sm">
+                      {player.photo_url ? (
+                        <Image
+                          src={player.photo_url}
+                          alt={player.name}
+                          fill
+                          sizes="(max-width: 640px) 33vw, 150px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center bg-paper text-4xl">
+                          <span aria-hidden>⚽</span>
+                        </div>
+                      )}
+                    </div>
+                    {player.number !== null && (
+                      <span className="absolute -left-1.5 -top-1.5 inline-block -rotate-6 rounded-lg border-2 border-ink bg-sun px-1.5 py-0.5 font-[family-name:var(--font-display)] text-sm shadow-hard-sm">
+                        {player.number}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1.5 truncate text-center text-sm font-bold">
+                    {player.name}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
     </section>
   );
 }

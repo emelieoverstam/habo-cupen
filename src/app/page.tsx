@@ -9,6 +9,7 @@ export default async function Home() {
     { data: events },
     { data: matches },
     { data: standings },
+    { data: players },
   ] = await Promise.all([
     supabase.from("teams").select("*").order("name"),
     supabase
@@ -19,6 +20,11 @@ export default async function Home() {
       .order("sort_hint"),
     supabase.from("matches").select("*").order("starts_at"),
     supabase.from("standings").select("*").order("position"),
+    supabase
+      .from("players")
+      .select("*")
+      .order("number", { nullsFirst: false })
+      .order("name"),
   ]);
 
   // Dagens datum i svensk tidszon (sv-SE ger formatet ÅÅÅÅ-MM-DD)
@@ -32,6 +38,7 @@ export default async function Home() {
       initialEvents={events ?? []}
       initialMatches={matches ?? []}
       initialStandings={standings ?? []}
+      initialPlayers={players ?? []}
       today={today}
     />
   );

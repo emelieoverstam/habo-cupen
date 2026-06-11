@@ -120,6 +120,41 @@ export type Database = {
         }
         Relationships: []
       }
+      players: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          number: number | null
+          photo_url: string | null
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          number?: number | null
+          photo_url?: string | null
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          number?: number | null
+          photo_url?: string | null
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       standings: {
         Row: {
           drawn: number
@@ -188,19 +223,16 @@ export type Database = {
           color: string
           id: string
           name: string
-          players: string[]
         }
         Insert: {
           color: string
           id?: string
           name: string
-          players?: string[]
         }
         Update: {
           color?: string
           id?: string
           name?: string
-          players?: string[]
         }
         Relationships: []
       }
