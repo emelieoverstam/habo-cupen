@@ -143,6 +143,16 @@ function Confetti({ pieces }: { pieces: ConfettiPiece[] }) {
   );
 }
 
+/* Packstatus för dashboard-widgeten: [antal ibockade, totalt] */
+export function usePackingProgress(): [number, number] {
+  const raw = useSyncExternalStore(subscribe, getSnapshot, () => "[]");
+  const count = useMemo(
+    () => new Set<number>(JSON.parse(raw)).size,
+    [raw]
+  );
+  return [count, ITEMS.length];
+}
+
 export default function PackingList() {
   const raw = useSyncExternalStore(subscribe, getSnapshot, () => "[]");
   const checked = useMemo(() => new Set<number>(JSON.parse(raw)), [raw]);

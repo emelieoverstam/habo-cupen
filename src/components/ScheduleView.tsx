@@ -4,10 +4,11 @@
 // cupmatcher. Initial data kommer från servern; uppdateringar kommer
 // live via Supabase Realtime (broadcast från databasen).
 
-import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { EVENT_META } from "@/lib/event-meta";
 import { useScheduleLive } from "@/lib/use-schedule-live";
+import { useCurrentMinute, formatCountdown } from "@/lib/time";
 import SiteHeader from "@/components/SiteHeader";
 import TeamMarker from "@/components/TeamMarker";
 import type { Tables } from "@/types/database";
@@ -50,21 +51,6 @@ function dayToDate(day: string) {
   return new Date(`${day}T12:00:00`);
 }
 
-/* Minutklocka som är hydration-säker: servern renderar null, klienten tickar varje minut */
-function subscribeMinute(callback: () => void) {
-  const timer = setInterval(callback, 60_000);
-  return () => clearInterval(timer);
-}
-
-function useCurrentMinute() {
-  const minuteStamp = useSyncExternalStore(
-    subscribeMinute,
-    () => Math.floor(Date.now() / 60_000),
-    () => null
-  );
-  return minuteStamp === null ? null : new Date(minuteStamp * 60_000);
-}
-
 function sortItems(a: TimelineItem, b: TimelineItem) {
   if (a.time && b.time && a.time !== b.time) return a.time < b.time ? -1 : 1;
   if (!!a.time !== !!b.time) return a.time ? -1 : 1;
@@ -75,18 +61,6 @@ function sortItems(a: TimelineItem, b: TimelineItem) {
 
 function itemKey(item: TimelineItem) {
   return item.kind === "event" ? item.event.id : item.match.id;
-}
-
-/* "om 2 dagar 4 tim", "om 3 tim 12 min", "om 5 min" eller "nu" */
-function formatCountdown(ms: number) {
-  const totalMinutes = Math.round(ms / 60_000);
-  if (totalMinutes < 1) return "nu";
-  const days = Math.floor(totalMinutes / 1440);
-  const hours = Math.floor((totalMinutes % 1440) / 60);
-  const minutes = totalMinutes % 60;
-  if (days > 0) return `om ${days} ${days === 1 ? "dag" : "dagar"} ${hours} tim`;
-  if (hours > 0) return `om ${hours} tim ${minutes} min`;
-  return `om ${minutes} min`;
 }
 
 export default function ScheduleView({
