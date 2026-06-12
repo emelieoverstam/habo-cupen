@@ -103,7 +103,7 @@ export default function AdminPanel({
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-16">
       <header className="pt-8 pb-6 text-center">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl uppercase leading-tight text-paper">
+        <h1 className="font-[family-name:var(--font-display)] font-bold text-3xl uppercase leading-tight text-paper">
           Ledar-admin
         </h1>
         <p className="mt-2 text-sm font-semibold text-paper/80">
@@ -164,7 +164,7 @@ function LoginForm({
       onSubmit={handleSubmit}
       className="rise rounded-xl bg-white p-5 shadow-card"
     >
-      <h2 className="mb-4 font-[family-name:var(--font-display)] text-base uppercase">
+      <h2 className="mb-4 font-[family-name:var(--font-display)] font-bold text-lg uppercase">
         Logga in
       </h2>
       <label className="mb-3 block">
@@ -197,7 +197,7 @@ function LoginForm({
       <button
         type="submit"
         disabled={busy}
-        className="w-full rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] text-sm uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
+        className="w-full rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] font-bold text-base uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
       >
         {busy ? "Loggar in…" : "Logga in"}
       </button>
@@ -311,7 +311,7 @@ function EventManager({
         onSubmit={handleSubmit}
         className="rise mb-8 rounded-xl bg-white p-5 shadow-card"
       >
-        <h2 className="mb-4 font-[family-name:var(--font-display)] text-base uppercase">
+        <h2 className="mb-4 font-[family-name:var(--font-display)] font-bold text-lg uppercase">
           {editingId ? "Ändra hålltid" : "Ny hålltid"}
         </h2>
 
@@ -435,7 +435,7 @@ function EventManager({
           <button
             type="submit"
             disabled={busy}
-            className="flex-1 rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] text-sm uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
+            className="flex-1 rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] font-bold text-base uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
           >
             {busy ? "Sparar…" : editingId ? "Spara ändringar" : "Lägg till"}
           </button>
@@ -452,7 +452,7 @@ function EventManager({
       </form>
 
       {/* Befintliga hålltider */}
-      <h2 className="mb-3 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] text-sm uppercase text-paper">
+      <h2 className="mb-3 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] font-bold text-base uppercase text-paper">
         Inlagda hålltider
       </h2>
       {events.length === 0 ? (
@@ -462,7 +462,7 @@ function EventManager({
       ) : (
         days.map((day) => (
           <div key={day} className="mb-5">
-            <h3 className="mb-2 font-[family-name:var(--font-display)] text-sm uppercase text-paper">
+            <h3 className="mb-2 font-[family-name:var(--font-display)] font-bold text-base uppercase text-paper">
               {dayFormat.format(new Date(`${day}T12:00:00`))}
             </h3>
             <ul className="space-y-2">
@@ -647,7 +647,7 @@ function PlayersManager({
 
   return (
     <section className="mt-10">
-      <h2 className="mb-3 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] text-sm uppercase text-paper">
+      <h2 className="mb-3 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] font-bold text-base uppercase text-paper">
         Trupperna
       </h2>
 
@@ -655,7 +655,7 @@ function PlayersManager({
         onSubmit={handleSubmit}
         className="mb-6 rounded-xl bg-white p-5 shadow-card"
       >
-        <h3 className="mb-4 font-[family-name:var(--font-display)] text-base uppercase">
+        <h3 className="mb-4 font-[family-name:var(--font-display)] font-bold text-lg uppercase">
           {editingId ? "Ändra spelare" : "Ny spelare"}
         </h3>
 
@@ -728,7 +728,7 @@ function PlayersManager({
           <button
             type="submit"
             disabled={busy}
-            className="flex-1 rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] text-sm uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
+            className="flex-1 rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] font-bold text-base uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
           >
             {busy ? "Sparar…" : editingId ? "Spara ändringar" : "Lägg till"}
           </button>
@@ -785,7 +785,7 @@ function PlayerGroup({
 }) {
   return (
     <div className="mb-5">
-      <h3 className="mb-2 flex items-center gap-2 font-[family-name:var(--font-display)] text-sm uppercase text-paper">
+      <h3 className="mb-2 flex items-center gap-2 font-[family-name:var(--font-display)] font-bold text-base uppercase text-paper">
         <span
           className="inline-block h-3 w-3 rounded-full border border-ink/40"
           style={{ backgroundColor: color ?? "var(--paper)" }}
@@ -819,7 +819,7 @@ function PlayerGroup({
               )}
               <span className="min-w-0 flex-1 truncate text-sm font-semibold">
                 {player.number !== null && (
-                  <strong className="mr-1.5 font-[family-name:var(--font-display)]">
+                  <strong className="mr-1.5 font-[family-name:var(--font-display)] font-bold">
                     #{player.number}
                   </strong>
                 )}
