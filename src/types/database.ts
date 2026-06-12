@@ -127,7 +127,7 @@ export type Database = {
           name: string
           number: number | null
           photo_url: string | null
-          team_id: string
+          team_id: string | null
         }
         Insert: {
           created_at?: string
@@ -135,7 +135,7 @@ export type Database = {
           name: string
           number?: number | null
           photo_url?: string | null
-          team_id: string
+          team_id?: string | null
         }
         Update: {
           created_at?: string
@@ -143,7 +143,7 @@ export type Database = {
           name?: string
           number?: number | null
           photo_url?: string | null
-          team_id?: string
+          team_id?: string | null
         }
         Relationships: [
           {

@@ -536,8 +536,9 @@ function PlayersManager({
   initialPlayers: Player[];
 }) {
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
+  // Tomt teamId = "inget lag ännu" — spelaren placeras senare
   const [form, setForm] = useState<PlayerFormState>({
-    teamId: teams[0]?.id ?? "",
+    teamId: "",
     name: "",
     number: "",
   });
@@ -566,7 +567,7 @@ function PlayersManager({
   function startEdit(player: Player) {
     setEditingId(player.id);
     setForm({
-      teamId: player.team_id,
+      teamId: player.team_id ?? "",
       name: player.name,
       number: player.number?.toString() ?? "",
     });
@@ -577,7 +578,7 @@ function PlayersManager({
 
   async function uploadPhoto(file: File, teamId: string): Promise<string> {
     const blob = await resizeImage(file);
-    const path = `${teamId}/${crypto.randomUUID()}.jpg`;
+    const path = `${teamId || "pool"}/${crypto.randomUUID()}.jpg`;
     const { error } = await supabase.storage
       .from("spelare")
       .upload(path, blob, { contentType: "image/jpeg" });
@@ -606,7 +607,7 @@ function PlayersManager({
       }
 
       const payload = {
-        team_id: form.teamId,
+        team_id: form.teamId || null,
         name: form.name.trim(),
         number: form.number ? Number(form.number) : null,
         photo_url: photoUrl,
@@ -666,6 +667,7 @@ function PlayersManager({
               onChange={(e) => setForm((f) => ({ ...f, teamId: e.target.value }))}
               className="w-full rounded-lg border-2 border-ink bg-paper px-3 py-2"
             >
+              <option value="">Inget lag ännu</option>
               {teams.map((team) => (
                 <option key={team.id} value={team.id}>
                   {team.name}
@@ -742,71 +744,105 @@ function PlayersManager({
         </div>
       </form>
 
-      {teams.map((team) => {
-        const squad = players.filter((p) => p.team_id === team.id);
-        return (
-          <div key={team.id} className="mb-5">
-            <h3 className="mb-2 flex items-center gap-2 font-[family-name:var(--font-display)] text-lg uppercase">
-              <span
-                className="inline-block h-3 w-3 rounded-full border-2 border-ink"
-                style={{ backgroundColor: team.color }}
-                aria-hidden
-              />
-              {team.name} ({squad.length})
-            </h3>
-            {squad.length === 0 ? (
-              <p className="rounded-xl border-2 border-dashed border-ink/40 px-4 py-4 text-center text-sm font-semibold text-ink/60">
-                Inga spelare inlagda ännu.
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {squad.map((player) => (
-                  <li
-                    key={player.id}
-                    className="flex items-center gap-3 rounded-xl border-2 border-ink bg-white px-3 py-2 shadow-hard-sm"
-                  >
-                    {player.photo_url ? (
-                      <Image
-                        src={player.photo_url}
-                        alt={player.name}
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 rounded-lg border-2 border-ink object-cover"
-                      />
-                    ) : (
-                      <span className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-ink bg-paper">
-                        ⚽
-                      </span>
-                    )}
-                    <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                      {player.number !== null && (
-                        <strong className="mr-1.5 font-[family-name:var(--font-display)]">
-                          #{player.number}
-                        </strong>
-                      )}
-                      {player.name}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => startEdit(player)}
-                      className="rounded-full border-2 border-ink bg-sun px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
-                    >
-                      Ändra
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(player)}
-                      className="rounded-full border-2 border-ink bg-coral px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
-                    >
-                      Ta bort
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        );
-      })}
+      {/* Ej placerade spelare först — arbetspoolen under förberedelserna */}
+      <PlayerGroup
+        title="Ej placerade"
+        emptyText="Inga oplacerade spelare."
+        players={players.filter((p) => p.team_id === null)}
+        onEdit={startEdit}
+        onDelete={handleDelete}
+      />
+
+      {teams.map((team) => (
+        <PlayerGroup
+          key={team.id}
+          title={team.name}
+          color={team.color}
+          emptyText="Inga spelare inlagda ännu."
+          players={players.filter((p) => p.team_id === team.id)}
+          onEdit={startEdit}
+          onDelete={handleDelete}
+        />
+      ))}
     </section>
+  );
+}
+
+function PlayerGroup({
+  title,
+  color,
+  emptyText,
+  players,
+  onEdit,
+  onDelete,
+}: {
+  title: string;
+  color?: string;
+  emptyText: string;
+  players: Player[];
+  onEdit: (player: Player) => void;
+  onDelete: (player: Player) => void;
+}) {
+  return (
+    <div className="mb-5">
+      <h3 className="mb-2 flex items-center gap-2 font-[family-name:var(--font-display)] text-lg uppercase">
+        <span
+          className="inline-block h-3 w-3 rounded-full border-2 border-ink"
+          style={{ backgroundColor: color ?? "var(--paper)" }}
+          aria-hidden
+        />
+        {title} ({players.length})
+      </h3>
+      {players.length === 0 ? (
+        <p className="rounded-xl border-2 border-dashed border-ink/40 px-4 py-4 text-center text-sm font-semibold text-ink/60">
+          {emptyText}
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {players.map((player) => (
+            <li
+              key={player.id}
+              className="flex items-center gap-3 rounded-xl border-2 border-ink bg-white px-3 py-2 shadow-hard-sm"
+            >
+              {player.photo_url ? (
+                <Image
+                  src={player.photo_url}
+                  alt={player.name}
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 rounded-lg border-2 border-ink object-cover"
+                />
+              ) : (
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-ink bg-paper">
+                  ⚽
+                </span>
+              )}
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                {player.number !== null && (
+                  <strong className="mr-1.5 font-[family-name:var(--font-display)]">
+                    #{player.number}
+                  </strong>
+                )}
+                {player.name}
+              </span>
+              <button
+                type="button"
+                onClick={() => onEdit(player)}
+                className="rounded-full border-2 border-ink bg-sun px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
+              >
+                Ändra
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(player)}
+                className="rounded-full border-2 border-ink bg-coral px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
+              >
+                Ta bort
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
