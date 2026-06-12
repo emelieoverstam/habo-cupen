@@ -16,6 +16,7 @@ import {
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { EVENT_META } from "@/lib/event-meta";
+import PackingList from "@/components/PackingList";
 import type { Tables } from "@/types/database";
 
 type Team = Tables<"teams">;
@@ -417,6 +418,8 @@ export default function ScheduleView({
             teams={teams}
             teamFilter={teamFilter}
           />
+
+          <PackingList />
         </>
       )}
 
