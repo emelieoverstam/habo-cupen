@@ -246,19 +246,19 @@ export default function ScheduleView({
       {/* Affischrubrik */}
       <header className="pt-8 pb-6 text-center">
         {days.length > 0 && (
-          <p className="mb-1 text-xs font-bold uppercase tracking-[0.3em]">
+          <p className="mb-1 text-xs font-bold uppercase tracking-[0.3em] text-sun">
             {dateRangeLabel(days)}
           </p>
         )}
-        <h1 className="font-[family-name:var(--font-display)] text-5xl uppercase leading-none sm:text-6xl">
+        <h1 className="font-[family-name:var(--font-display)] text-5xl uppercase leading-none text-paper sm:text-6xl">
           Habo-cupen
-          <span className="ml-3 inline-block -rotate-6 rounded-lg border-2 border-ink bg-sun px-2 py-1 align-middle text-2xl shadow-hard-sm sm:text-3xl">
+          <span className="ml-3 inline-block -rotate-6 rounded-lg border-2 border-ink bg-sun px-2 py-1 align-middle text-2xl text-ink shadow-hard-sm sm:text-3xl">
             2026
           </span>
         </h1>
-        <p className="mt-3 inline-flex items-center gap-2 text-sm font-semibold">
+        <p className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-paper">
           <span
-            className="live-dot inline-block h-2.5 w-2.5 rounded-full bg-grass"
+            className="live-dot inline-block h-2.5 w-2.5 rounded-full bg-mint"
             aria-hidden
           />
           Schema, resultat och tabeller uppdateras live
@@ -272,7 +272,7 @@ export default function ScheduleView({
           {/* Dagflikar */}
           <nav
             aria-label="Välj dag"
-            className="sticky top-0 z-10 -mx-4 mb-5 border-y-2 border-ink bg-paper px-4 py-3"
+            className="sticky top-0 z-10 -mx-4 mb-5 border-y-2 border-ink bg-pine px-4 py-3"
           >
             <div className="flex gap-2">
               {days.map((day) => {
@@ -283,10 +283,10 @@ export default function ScheduleView({
                     type="button"
                     onClick={() => setSelectedDay(day)}
                     aria-pressed={active}
-                    className={`flex-1 rounded-xl border-2 border-ink px-3 py-2 font-[family-name:var(--font-display)] text-lg uppercase transition-transform active:scale-95 ${
+                    className={`flex-1 rounded-xl border-2 px-3 py-2 font-[family-name:var(--font-display)] text-lg uppercase transition-transform active:scale-95 ${
                       active
-                        ? "bg-grass shadow-hard-sm"
-                        : "bg-paper hover:bg-grass/25"
+                        ? "border-ink bg-sun text-ink shadow-hard-sm"
+                        : "border-paper/60 bg-paper/10 text-paper hover:bg-paper/20"
                     }`}
                   >
                     {tabFormat.format(dayToDate(day))}
@@ -319,12 +319,12 @@ export default function ScheduleView({
             )}
           </nav>
 
-          <h2 className="mb-4 inline-block border-b-4 border-grass pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase">
+          <h2 className="mb-4 inline-block border-b-4 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
             {headingFormat.format(dayToDate(activeDay))}
           </h2>
 
           {dayItems.length === 0 ? (
-            <p className="rounded-xl border-2 border-dashed border-ink/40 px-4 py-8 text-center font-semibold text-ink/60">
+            <p className="rounded-xl border-2 border-dashed border-paper/40 px-4 py-8 text-center font-semibold text-paper/70">
               Inget inplanerat den här dagen ännu.
             </p>
           ) : (
@@ -365,8 +365,8 @@ export default function ScheduleView({
         </>
       )}
 
-      <footer className="mt-12 text-center text-sm font-semibold text-ink/40">
-        <a href="/admin" className="hover:text-ink/70">
+      <footer className="mt-12 text-center text-sm font-semibold text-paper/50">
+        <a href="/admin" className="hover:text-paper">
           Ledarinloggning
         </a>
       </footer>
@@ -390,8 +390,10 @@ function FilterChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`inline-flex items-center gap-1.5 rounded-full border-2 border-ink px-3 py-1 text-sm font-bold transition-transform active:scale-95 ${
-        active ? "bg-grass shadow-hard-sm" : "bg-paper hover:bg-grass/25"
+      className={`inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1 text-sm font-bold transition-transform active:scale-95 ${
+        active
+          ? "border-ink bg-sun text-ink shadow-hard-sm"
+          : "border-paper/60 bg-paper/10 text-paper hover:bg-paper/20"
       }`}
     >
       {color && (
@@ -593,7 +595,7 @@ function StandingsSection({
 
   return (
     <section className="mt-10">
-      <h2 className="mb-4 inline-block border-b-4 border-grass pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase">
+      <h2 className="mb-4 inline-block border-b-4 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
         Tabeller
       </h2>
       <div className="space-y-4">
@@ -691,7 +693,7 @@ function SquadSection({
 
   return (
     <section className="mt-10">
-      <h2 className="mb-4 inline-block border-b-4 border-grass pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase">
+      <h2 className="mb-4 inline-block border-b-4 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
         Trupperna
       </h2>
 
@@ -700,7 +702,7 @@ function SquadSection({
         if (squad.length === 0) return null;
         return (
           <div key={team.id} className="mb-7">
-            <h3 className="mb-3 flex items-center gap-2 font-[family-name:var(--font-display)] text-xl uppercase">
+            <h3 className="mb-3 flex items-center gap-2 font-[family-name:var(--font-display)] text-xl uppercase text-paper">
               <span
                 className="inline-block h-3.5 w-3.5 rounded-full border-2 border-ink"
                 style={{ backgroundColor: team.color }}
@@ -737,7 +739,7 @@ function SquadSection({
                       </span>
                     )}
                   </div>
-                  <p className="mt-1.5 truncate text-center text-sm font-bold">
+                  <p className="mt-1.5 truncate text-center text-sm font-bold text-paper">
                     {player.name}
                   </p>
                 </li>

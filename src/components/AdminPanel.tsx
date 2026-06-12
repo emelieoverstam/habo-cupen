@@ -103,12 +103,12 @@ export default function AdminPanel({
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-16">
       <header className="pt-8 pb-6 text-center">
-        <h1 className="font-[family-name:var(--font-display)] text-4xl uppercase leading-none">
+        <h1 className="font-[family-name:var(--font-display)] text-4xl uppercase leading-none text-paper">
           Ledar-admin
         </h1>
-        <p className="mt-2 text-sm font-semibold text-ink/70">
+        <p className="mt-2 text-sm font-semibold text-paper/80">
           Hålltider för Habo-cupen 2026 ·{" "}
-          <Link href="/" className="underline decoration-grass decoration-2">
+          <Link href="/" className="underline decoration-sun decoration-2">
             Till schemat
           </Link>
         </p>
@@ -295,12 +295,12 @@ function EventManager({
 
   return (
     <>
-      <div className="mb-5 flex items-center justify-between text-sm font-semibold text-ink/70">
+      <div className="mb-5 flex items-center justify-between text-sm font-semibold text-paper/80">
         <span>Inloggad som {userEmail}</span>
         <button
           type="button"
           onClick={() => supabase.auth.signOut()}
-          className="rounded-full border-2 border-ink bg-paper px-3 py-1 font-bold transition-transform active:scale-95"
+          className="rounded-full border-2 border-paper/60 bg-paper/10 px-3 py-1 font-bold text-paper transition-transform active:scale-95"
         >
           Logga ut
         </button>
@@ -452,17 +452,17 @@ function EventManager({
       </form>
 
       {/* Befintliga hålltider */}
-      <h2 className="mb-3 inline-block border-b-4 border-grass pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase">
+      <h2 className="mb-3 inline-block border-b-4 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
         Inlagda hålltider
       </h2>
       {events.length === 0 ? (
-        <p className="rounded-xl border-2 border-dashed border-ink/40 px-4 py-6 text-center font-semibold text-ink/60">
+        <p className="rounded-xl border-2 border-dashed border-paper/40 px-4 py-6 text-center font-semibold text-paper/70">
           Inga hålltider inlagda ännu.
         </p>
       ) : (
         days.map((day) => (
           <div key={day} className="mb-5">
-            <h3 className="mb-2 font-[family-name:var(--font-display)] text-lg uppercase">
+            <h3 className="mb-2 font-[family-name:var(--font-display)] text-lg uppercase text-paper">
               {dayFormat.format(new Date(`${day}T12:00:00`))}
             </h3>
             <ul className="space-y-2">
@@ -647,7 +647,7 @@ function PlayersManager({
 
   return (
     <section className="mt-10">
-      <h2 className="mb-3 inline-block border-b-4 border-grass pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase">
+      <h2 className="mb-3 inline-block border-b-4 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
         Trupperna
       </h2>
 
@@ -785,7 +785,7 @@ function PlayerGroup({
 }) {
   return (
     <div className="mb-5">
-      <h3 className="mb-2 flex items-center gap-2 font-[family-name:var(--font-display)] text-lg uppercase">
+      <h3 className="mb-2 flex items-center gap-2 font-[family-name:var(--font-display)] text-lg uppercase text-paper">
         <span
           className="inline-block h-3 w-3 rounded-full border-2 border-ink"
           style={{ backgroundColor: color ?? "var(--paper)" }}
@@ -794,7 +794,7 @@ function PlayerGroup({
         {title} ({players.length})
       </h3>
       {players.length === 0 ? (
-        <p className="rounded-xl border-2 border-dashed border-ink/40 px-4 py-4 text-center text-sm font-semibold text-ink/60">
+        <p className="rounded-xl border-2 border-dashed border-paper/40 px-4 py-4 text-center text-sm font-semibold text-paper/70">
           {emptyText}
         </p>
       ) : (
