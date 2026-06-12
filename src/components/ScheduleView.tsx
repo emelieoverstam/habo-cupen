@@ -737,35 +737,19 @@ function SquadSection({
   );
 }
 
-/* Tre handstilar som roterar mellan spelarna så att varje
-   autograf känns personlig. Valet är stabilt utifrån spelarens id,
-   och långa namn får ett mindre snäpp så att de inte klipps. */
-const AUTOGRAPHS = [
-  {
-    font: "var(--font-autograph-1)",
-    size: "text-xl",
-    sizeLong: "text-base",
-    tilt: "-rotate-2",
-  },
-  {
-    font: "var(--font-autograph-2)",
-    size: "text-2xl",
-    sizeLong: "text-lg",
-    tilt: "rotate-1",
-  },
-  {
-    font: "var(--font-autograph-3)",
-    size: "text-2xl",
-    sizeLong: "text-lg",
-    tilt: "-rotate-1",
-  },
-];
+/* Autografen växlar mellan två skrivstilar och får en lätt individuell
+   lutning (stabilt utifrån spelarens id). Långa namn blir mindre. */
+const AUTOGRAPH_FONTS = ["var(--font-autograph-1)"];
+const AUTOGRAPH_TILTS = ["-rotate-3", "rotate-2", "-rotate-2", "rotate-3"];
 
 function autographFor(id: string, name: string) {
   let hash = 0;
   for (const ch of id) hash = (hash + ch.charCodeAt(0)) % 997;
-  const style = AUTOGRAPHS[hash % AUTOGRAPHS.length];
-  return { ...style, size: name.length > 14 ? style.sizeLong : style.size };
+  return {
+    font: AUTOGRAPH_FONTS[hash % AUTOGRAPH_FONTS.length],
+    tilt: AUTOGRAPH_TILTS[hash % AUTOGRAPH_TILTS.length],
+    size: name.length > 14 ? "text-2xl" : "text-3xl",
+  };
 }
 
 /* Spelarkort i samlarkortsstil: créme-ram med guldlinje, porträtt,
@@ -782,6 +766,7 @@ function PlayerCard({
 }) {
   const [flipped, setFlipped] = useState(false);
   const autograph = autographFor(player.id, player.name);
+  const hasPhoto = player.photo_url !== null;
 
   return (
     <button
@@ -814,16 +799,25 @@ function PlayerCard({
                   {player.number}
                 </span>
               )}
-              <span className="card-shine" aria-hidden />
-            </div>
-            <div className="px-1 pb-1 pt-1.5 text-center">
-              <p
-                className={`truncate ${autograph.size} ${autograph.tilt} leading-tight text-ink`}
+              {/* Autografen svept över fotots nederkant, som ett signerat kort */}
+              <span
+                aria-hidden
+                className={`pointer-events-none absolute inset-x-1 bottom-1.5 text-center ${autograph.size} ${autograph.tilt} leading-none ${
+                  hasPhoto
+                    ? "text-paper drop-shadow-[0_1px_3px_rgba(0,0,0,0.65)]"
+                    : "text-ink/60"
+                }`}
                 style={{ fontFamily: autograph.font }}
               >
                 {player.name}
+              </span>
+              <span className="card-shine" aria-hidden />
+            </div>
+            <div className="px-1 pb-1 pt-1.5 text-center">
+              <p className="truncate text-sm font-bold text-ink">
+                {player.name}
               </p>
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-ink/50">
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-ink/50">
                 BK Zeros · {teamLabel}
               </p>
             </div>
