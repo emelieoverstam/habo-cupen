@@ -766,7 +766,6 @@ function PlayerCard({
 }) {
   const [flipped, setFlipped] = useState(false);
   const autograph = autographFor(player.id, player.name);
-  const hasPhoto = player.photo_url !== null;
 
   return (
     <button
@@ -799,22 +798,14 @@ function PlayerCard({
                   {player.number}
                 </span>
               )}
-              {/* Autografen svept över fotots nederkant, som ett signerat kort */}
-              <span
-                aria-hidden
-                className={`pointer-events-none absolute inset-x-1 bottom-1.5 text-center ${autograph.size} ${autograph.tilt} leading-none ${
-                  hasPhoto
-                    ? "text-paper drop-shadow-[0_1px_3px_rgba(0,0,0,0.65)]"
-                    : "text-ink/60"
-                }`}
-                style={{ fontFamily: autograph.font }}
-              >
-                {player.name}
-              </span>
               <span className="card-shine" aria-hidden />
             </div>
             <div className="px-1 pb-1 pt-1.5 text-center">
-              <p className="truncate text-sm font-bold text-ink">
+              {/* Namnet som autograf under fotot */}
+              <p
+                className={`truncate ${autograph.size} ${autograph.tilt} leading-tight text-ink`}
+                style={{ fontFamily: autograph.font }}
+              >
                 {player.name}
               </p>
               <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-ink/50">
