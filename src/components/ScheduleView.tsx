@@ -250,9 +250,9 @@ export default function ScheduleView({
             {dateRangeLabel(days)}
           </p>
         )}
-        <h1 className="font-[family-name:var(--font-display)] text-5xl uppercase leading-none text-paper sm:text-6xl">
+        <h1 className="font-[family-name:var(--font-display)] text-3xl uppercase leading-tight text-paper sm:text-4xl">
           Habo-cupen
-          <span className="ml-3 inline-block -rotate-6 rounded-lg bg-sun px-2 py-1 align-middle text-2xl text-ink shadow-chip sm:text-3xl">
+          <span className="ml-3 inline-block -rotate-6 rounded-lg bg-sun px-2 py-1 align-middle text-base text-ink shadow-chip sm:text-lg">
             2026
           </span>
         </h1>
@@ -283,7 +283,7 @@ export default function ScheduleView({
                     type="button"
                     onClick={() => setSelectedDay(day)}
                     aria-pressed={active}
-                    className={`flex-1 rounded-xl border px-3 py-2 font-[family-name:var(--font-display)] text-lg uppercase transition-transform active:scale-95 ${
+                    className={`flex-1 rounded-xl border px-3 py-2 font-[family-name:var(--font-display)] text-sm uppercase transition-transform active:scale-95 ${
                       active
                         ? "border-transparent bg-sun text-ink shadow-chip"
                         : "border-paper/30 bg-paper/10 text-paper hover:bg-paper/20"
@@ -319,7 +319,7 @@ export default function ScheduleView({
             )}
           </nav>
 
-          <h2 className="mb-4 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
+          <h2 className="mb-4 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] text-lg uppercase text-paper">
             {headingFormat.format(dayToDate(activeDay))}
           </h2>
 
@@ -459,7 +459,7 @@ function EventCard({
       />
       <div className="flex items-start gap-3 py-3 pl-5 pr-4">
         <div className="w-14 shrink-0 text-center">
-          <p className="font-[family-name:var(--font-display)] text-xl leading-tight">
+          <p className="font-[family-name:var(--font-display)] text-base leading-tight">
             {event.starts_at
               ? timeFormat.format(new Date(event.starts_at))
               : "–"}
@@ -535,7 +535,7 @@ function MatchCard({
       />
       <div className="flex items-start gap-3 py-3 pl-5 pr-4">
         <div className="w-14 shrink-0 text-center">
-          <p className="font-[family-name:var(--font-display)] text-xl leading-tight">
+          <p className="font-[family-name:var(--font-display)] text-base leading-tight">
             {match.starts_at
               ? timeFormat.format(new Date(match.starts_at))
               : "–"}
@@ -562,7 +562,7 @@ function MatchCard({
         </div>
 
         {played && (
-          <div className="shrink-0 self-center rounded-lg bg-sun px-2.5 py-1 font-[family-name:var(--font-display)] text-xl shadow-chip">
+          <div className="shrink-0 self-center rounded-lg bg-sun px-2.5 py-1 font-[family-name:var(--font-display)] text-base shadow-chip">
             {match.home_score}–{match.away_score}
           </div>
         )}
@@ -595,7 +595,7 @@ function StandingsSection({
 
   return (
     <section className="mt-10">
-      <h2 className="mb-4 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
+      <h2 className="mb-4 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] text-lg uppercase text-paper">
         Tabeller
       </h2>
       <div className="space-y-4">
@@ -608,7 +608,7 @@ function StandingsSection({
               key={groupName}
               className="rise overflow-hidden rounded-xl bg-white shadow-card"
             >
-              <p className="flex items-center justify-between bg-grass px-4 py-2 font-[family-name:var(--font-display)] text-lg uppercase">
+              <p className="flex items-center justify-between bg-grass px-4 py-2 font-[family-name:var(--font-display)] text-sm uppercase">
                 {groupName}
                 {ourTeam && (
                   <span className="text-sm normal-case">
@@ -693,7 +693,7 @@ function SquadSection({
 
   return (
     <section className="mt-10">
-      <h2 className="mb-4 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
+      <h2 className="mb-4 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] text-lg uppercase text-paper">
         Trupperna
       </h2>
 
@@ -702,7 +702,7 @@ function SquadSection({
         if (squad.length === 0) return null;
         return (
           <div key={team.id} className="mb-7">
-            <h3 className="mb-3 flex items-center gap-2 font-[family-name:var(--font-display)] text-xl uppercase text-paper">
+            <h3 className="mb-3 flex items-center gap-2 font-[family-name:var(--font-display)] text-base uppercase text-paper">
               <span
                 className="inline-block h-3.5 w-3.5 rounded-full border border-ink/40"
                 style={{ backgroundColor: team.color }}
@@ -734,7 +734,7 @@ function SquadSection({
                       )}
                     </div>
                     {player.number !== null && (
-                      <span className="absolute -left-1.5 -top-1.5 inline-block -rotate-6 rounded-lg bg-sun px-1.5 py-0.5 font-[family-name:var(--font-display)] text-sm shadow-chip">
+                      <span className="absolute -left-1.5 -top-1.5 inline-block -rotate-6 rounded-lg bg-sun px-1.5 py-0.5 font-[family-name:var(--font-display)] text-xs shadow-chip">
                         {player.number}
                       </span>
                     )}

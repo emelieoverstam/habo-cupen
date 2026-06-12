@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Anton, Archivo } from "next/font/google";
+import { Graduate, Archivo } from "next/font/google";
 import "./globals.css";
 
-// Anton för rubriker (idrottsaffisch), Archivo för brödtext
-const anton = Anton({
+// Graduate för rubriker (collegiate/klubbemblem), Archivo för brödtext
+const graduate = Graduate({
   weight: "400",
-  subsets: ["latin", "latin-ext"],
-  variable: "--font-anton",
+  subsets: ["latin"],
+  variable: "--font-graduate",
 });
 
 const archivo = Archivo({
@@ -32,7 +32,7 @@ export default function RootLayout({
   return (
     <html
       lang="sv"
-      className={`${anton.variable} ${archivo.variable} h-full antialiased`}
+      className={`${graduate.variable} ${archivo.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
