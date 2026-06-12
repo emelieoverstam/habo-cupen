@@ -43,13 +43,13 @@ body {
   font-family: var(--font-archivo), sans-serif;
 }
 
-/* Hård skugga i affischstil — används på kort och knappar */
-.shadow-hard {
-  box-shadow: 4px 4px 0 0 var(--ink);
+/* Mjuka skuggor som lyfter créme-ytorna från den gröna bottnen */
+.shadow-card {
+  box-shadow: 0 4px 18px rgb(8 22 13 / 0.35);
 }
 
-.shadow-hard-sm {
-  box-shadow: 2px 2px 0 0 var(--ink);
+.shadow-chip {
+  box-shadow: 0 2px 8px rgb(8 22 13 / 0.3);
 }
 
 /* Intåg underifrån, stegras per kort via animation-delay */

@@ -252,7 +252,7 @@ export default function ScheduleView({
         )}
         <h1 className="font-[family-name:var(--font-display)] text-5xl uppercase leading-none text-paper sm:text-6xl">
           Habo-cupen
-          <span className="ml-3 inline-block -rotate-6 rounded-lg border-2 border-ink bg-sun px-2 py-1 align-middle text-2xl text-ink shadow-hard-sm sm:text-3xl">
+          <span className="ml-3 inline-block -rotate-6 rounded-lg bg-sun px-2 py-1 align-middle text-2xl text-ink shadow-chip sm:text-3xl">
             2026
           </span>
         </h1>
@@ -272,7 +272,7 @@ export default function ScheduleView({
           {/* Dagflikar */}
           <nav
             aria-label="Välj dag"
-            className="sticky top-0 z-10 -mx-4 mb-5 border-y-2 border-ink bg-pine px-4 py-3"
+            className="sticky top-0 z-10 -mx-4 mb-5 border-b border-paper/15 bg-pine px-4 py-3"
           >
             <div className="flex gap-2">
               {days.map((day) => {
@@ -283,10 +283,10 @@ export default function ScheduleView({
                     type="button"
                     onClick={() => setSelectedDay(day)}
                     aria-pressed={active}
-                    className={`flex-1 rounded-xl border-2 px-3 py-2 font-[family-name:var(--font-display)] text-lg uppercase transition-transform active:scale-95 ${
+                    className={`flex-1 rounded-xl border px-3 py-2 font-[family-name:var(--font-display)] text-lg uppercase transition-transform active:scale-95 ${
                       active
-                        ? "border-ink bg-sun text-ink shadow-hard-sm"
-                        : "border-paper/60 bg-paper/10 text-paper hover:bg-paper/20"
+                        ? "border-transparent bg-sun text-ink shadow-chip"
+                        : "border-paper/30 bg-paper/10 text-paper hover:bg-paper/20"
                     }`}
                   >
                     {tabFormat.format(dayToDate(day))}
@@ -319,12 +319,12 @@ export default function ScheduleView({
             )}
           </nav>
 
-          <h2 className="mb-4 inline-block border-b-4 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
+          <h2 className="mb-4 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
             {headingFormat.format(dayToDate(activeDay))}
           </h2>
 
           {dayItems.length === 0 ? (
-            <p className="rounded-xl border-2 border-dashed border-paper/40 px-4 py-8 text-center font-semibold text-paper/70">
+            <p className="rounded-xl border border-dashed border-paper/30 px-4 py-8 text-center font-semibold text-paper/70">
               Inget inplanerat den här dagen ännu.
             </p>
           ) : (
@@ -390,15 +390,15 @@ function FilterChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1 text-sm font-bold transition-transform active:scale-95 ${
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-bold transition-transform active:scale-95 ${
         active
-          ? "border-ink bg-sun text-ink shadow-hard-sm"
-          : "border-paper/60 bg-paper/10 text-paper hover:bg-paper/20"
+          ? "border-transparent bg-sun text-ink shadow-chip"
+          : "border-paper/30 bg-paper/10 text-paper hover:bg-paper/20"
       }`}
     >
       {color && (
         <span
-          className="inline-block h-2.5 w-2.5 rounded-full border border-ink"
+          className="inline-block h-2.5 w-2.5 rounded-full border border-ink/40"
           style={{ backgroundColor: color }}
           aria-hidden
         />
@@ -410,7 +410,7 @@ function FilterChip({
 
 function NextBadge() {
   return (
-    <span className="rounded-full border-2 border-ink bg-grass px-2 py-0.5 text-xs font-bold uppercase">
+    <span className="rounded-full bg-grass px-2 py-0.5 text-xs font-bold uppercase">
       Härnäst
     </span>
   );
@@ -421,7 +421,7 @@ function TeamMarker({ team }: { team?: Tables<"teams"> }) {
   return (
     <span className="inline-flex items-center gap-1 font-semibold">
       <span
-        className="inline-block h-2 w-2 rounded-full border border-ink"
+        className="inline-block h-2 w-2 rounded-full border border-ink/40"
         style={{ backgroundColor: team.color }}
         aria-hidden
       />
@@ -446,7 +446,7 @@ function EventCard({
 
   return (
     <li
-      className={`rise relative overflow-hidden rounded-xl border-2 border-ink bg-white shadow-hard ${
+      className={`rise relative overflow-hidden rounded-xl bg-white shadow-card ${
         cancelled ? "opacity-60" : ""
       }`}
       style={{ animationDelay: `${delayMs}ms` }}
@@ -480,12 +480,12 @@ function EventCard({
             </h3>
             {isNext && <NextBadge />}
             {event.status === "tbd" && (
-              <span className="rounded-full border-2 border-ink bg-sky px-2 py-0.5 text-xs font-bold uppercase">
+              <span className="rounded-full bg-sky px-2 py-0.5 text-xs font-bold uppercase">
                 Prel. tid
               </span>
             )}
             {cancelled && (
-              <span className="rounded-full border-2 border-ink bg-coral px-2 py-0.5 text-xs font-bold uppercase">
+              <span className="rounded-full bg-coral px-2 py-0.5 text-xs font-bold uppercase">
                 Inställd
               </span>
             )}
@@ -525,7 +525,7 @@ function MatchCard({
 
   return (
     <li
-      className="rise relative overflow-hidden rounded-xl border-2 border-ink bg-white shadow-hard"
+      className="rise relative overflow-hidden rounded-xl bg-white shadow-card"
       style={{ animationDelay: `${delayMs}ms` }}
     >
       <div
@@ -562,7 +562,7 @@ function MatchCard({
         </div>
 
         {played && (
-          <div className="shrink-0 self-center rounded-lg border-2 border-ink bg-sun px-2.5 py-1 font-[family-name:var(--font-display)] text-xl shadow-hard-sm">
+          <div className="shrink-0 self-center rounded-lg bg-sun px-2.5 py-1 font-[family-name:var(--font-display)] text-xl shadow-chip">
             {match.home_score}–{match.away_score}
           </div>
         )}
@@ -595,7 +595,7 @@ function StandingsSection({
 
   return (
     <section className="mt-10">
-      <h2 className="mb-4 inline-block border-b-4 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
+      <h2 className="mb-4 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
         Tabeller
       </h2>
       <div className="space-y-4">
@@ -606,9 +606,9 @@ function StandingsSection({
           return (
             <div
               key={groupName}
-              className="rise overflow-hidden rounded-xl border-2 border-ink bg-white shadow-hard"
+              className="rise overflow-hidden rounded-xl bg-white shadow-card"
             >
-              <p className="flex items-center justify-between border-b-2 border-ink bg-grass px-4 py-2 font-[family-name:var(--font-display)] text-lg uppercase">
+              <p className="flex items-center justify-between bg-grass px-4 py-2 font-[family-name:var(--font-display)] text-lg uppercase">
                 {groupName}
                 {ourTeam && (
                   <span className="text-sm normal-case">
@@ -693,7 +693,7 @@ function SquadSection({
 
   return (
     <section className="mt-10">
-      <h2 className="mb-4 inline-block border-b-4 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
+      <h2 className="mb-4 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
         Trupperna
       </h2>
 
@@ -704,7 +704,7 @@ function SquadSection({
           <div key={team.id} className="mb-7">
             <h3 className="mb-3 flex items-center gap-2 font-[family-name:var(--font-display)] text-xl uppercase text-paper">
               <span
-                className="inline-block h-3.5 w-3.5 rounded-full border-2 border-ink"
+                className="inline-block h-3.5 w-3.5 rounded-full border border-ink/40"
                 style={{ backgroundColor: team.color }}
                 aria-hidden
               />
@@ -718,7 +718,7 @@ function SquadSection({
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
                   <div className="relative">
-                    <div className="relative aspect-square overflow-hidden rounded-xl border-2 border-ink bg-white shadow-hard-sm">
+                    <div className="relative aspect-square overflow-hidden rounded-xl bg-white shadow-chip">
                       {player.photo_url ? (
                         <Image
                           src={player.photo_url}
@@ -734,7 +734,7 @@ function SquadSection({
                       )}
                     </div>
                     {player.number !== null && (
-                      <span className="absolute -left-1.5 -top-1.5 inline-block -rotate-6 rounded-lg border-2 border-ink bg-sun px-1.5 py-0.5 font-[family-name:var(--font-display)] text-sm shadow-hard-sm">
+                      <span className="absolute -left-1.5 -top-1.5 inline-block -rotate-6 rounded-lg bg-sun px-1.5 py-0.5 font-[family-name:var(--font-display)] text-sm shadow-chip">
                         {player.number}
                       </span>
                     )}
@@ -754,7 +754,7 @@ function SquadSection({
 
 function EmptyState() {
   return (
-    <div className="rise mt-8 rounded-xl border-2 border-ink bg-white px-6 py-12 text-center shadow-hard">
+    <div className="rise mt-8 rounded-xl bg-white px-6 py-12 text-center shadow-card">
       <p className="text-5xl" aria-hidden>
         ⚽
       </p>

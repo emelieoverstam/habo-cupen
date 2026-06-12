@@ -162,7 +162,7 @@ function LoginForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rise rounded-xl border-2 border-ink bg-white p-5 shadow-hard"
+      className="rise rounded-xl bg-white p-5 shadow-card"
     >
       <h2 className="mb-4 font-[family-name:var(--font-display)] text-xl uppercase">
         Logga in
@@ -175,7 +175,7 @@ function LoginForm({
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg border-2 border-ink bg-paper px-3 py-2"
+          className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
         />
       </label>
       <label className="mb-4 block">
@@ -186,18 +186,18 @@ function LoginForm({
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border-2 border-ink bg-paper px-3 py-2"
+          className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
         />
       </label>
       {error && (
-        <p className="mb-3 rounded-lg border-2 border-ink bg-coral px-3 py-2 text-sm font-bold">
+        <p className="mb-3 rounded-lg bg-coral px-3 py-2 text-sm font-bold">
           {error}
         </p>
       )}
       <button
         type="submit"
         disabled={busy}
-        className="w-full rounded-xl border-2 border-ink bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] text-lg uppercase shadow-hard-sm transition-transform active:scale-95 disabled:opacity-50"
+        className="w-full rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] text-lg uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
       >
         {busy ? "Loggar in…" : "Logga in"}
       </button>
@@ -300,7 +300,7 @@ function EventManager({
         <button
           type="button"
           onClick={() => supabase.auth.signOut()}
-          className="rounded-full border-2 border-paper/60 bg-paper/10 px-3 py-1 font-bold text-paper transition-transform active:scale-95"
+          className="rounded-full border border-paper/30 bg-paper/10 px-3 py-1 font-bold text-paper transition-transform active:scale-95"
         >
           Logga ut
         </button>
@@ -309,7 +309,7 @@ function EventManager({
       {/* Formulär för ny/ändrad hålltid */}
       <form
         onSubmit={handleSubmit}
-        className="rise mb-8 rounded-xl border-2 border-ink bg-white p-5 shadow-hard"
+        className="rise mb-8 rounded-xl bg-white p-5 shadow-card"
       >
         <h2 className="mb-4 font-[family-name:var(--font-display)] text-xl uppercase">
           {editingId ? "Ändra hålltid" : "Ny hålltid"}
@@ -321,7 +321,7 @@ function EventManager({
             <select
               value={form.type}
               onChange={(e) => set("type", e.target.value as EventType)}
-              className="w-full rounded-lg border-2 border-ink bg-paper px-3 py-2"
+              className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
             >
               {(Object.keys(EVENT_META) as EventType[]).map((type) => (
                 <option key={type} value={type}>
@@ -335,7 +335,7 @@ function EventManager({
             <select
               value={form.teamId}
               onChange={(e) => set("teamId", e.target.value)}
-              className="w-full rounded-lg border-2 border-ink bg-paper px-3 py-2"
+              className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
             >
               <option value="">Båda lagen</option>
               {teams.map((team) => (
@@ -355,7 +355,7 @@ function EventManager({
             value={form.title}
             onChange={(e) => set("title", e.target.value)}
             placeholder="t.ex. Lunch i matsalen"
-            className="w-full rounded-lg border-2 border-ink bg-paper px-3 py-2"
+            className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
           />
         </label>
 
@@ -367,7 +367,7 @@ function EventManager({
               required
               value={form.day}
               onChange={(e) => set("day", e.target.value)}
-              className="w-full rounded-lg border-2 border-ink bg-paper px-3 py-2"
+              className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
             />
           </label>
           <label className="block">
@@ -378,7 +378,7 @@ function EventManager({
               type="time"
               value={form.time}
               onChange={(e) => set("time", e.target.value)}
-              className="w-full rounded-lg border-2 border-ink bg-paper px-3 py-2"
+              className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
             />
           </label>
         </div>
@@ -393,7 +393,7 @@ function EventManager({
               value={form.location}
               onChange={(e) => set("location", e.target.value)}
               placeholder="t.ex. Habo skola"
-              className="w-full rounded-lg border-2 border-ink bg-paper px-3 py-2"
+              className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
             />
           </label>
           <label className="block">
@@ -401,7 +401,7 @@ function EventManager({
             <select
               value={form.status}
               onChange={(e) => set("status", e.target.value as EventStatus)}
-              className="w-full rounded-lg border-2 border-ink bg-paper px-3 py-2"
+              className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
             >
               {(Object.keys(STATUS_LABELS) as EventStatus[]).map((status) => (
                 <option key={status} value={status}>
@@ -421,12 +421,12 @@ function EventManager({
             onChange={(e) => set("note", e.target.value)}
             rows={2}
             placeholder="t.ex. Samling 30 min innan"
-            className="w-full rounded-lg border-2 border-ink bg-paper px-3 py-2"
+            className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
           />
         </label>
 
         {message && (
-          <p className="mb-3 rounded-lg border-2 border-ink bg-sun px-3 py-2 text-sm font-bold">
+          <p className="mb-3 rounded-lg bg-sun px-3 py-2 text-sm font-bold">
             {message}
           </p>
         )}
@@ -435,7 +435,7 @@ function EventManager({
           <button
             type="submit"
             disabled={busy}
-            className="flex-1 rounded-xl border-2 border-ink bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] text-lg uppercase shadow-hard-sm transition-transform active:scale-95 disabled:opacity-50"
+            className="flex-1 rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] text-lg uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
           >
             {busy ? "Sparar…" : editingId ? "Spara ändringar" : "Lägg till"}
           </button>
@@ -443,7 +443,7 @@ function EventManager({
             <button
               type="button"
               onClick={resetForm}
-              className="rounded-xl border-2 border-ink bg-paper px-4 py-2.5 font-bold transition-transform active:scale-95"
+              className="rounded-xl border border-ink/25 bg-paper px-4 py-2.5 font-bold transition-transform active:scale-95"
             >
               Avbryt
             </button>
@@ -452,11 +452,11 @@ function EventManager({
       </form>
 
       {/* Befintliga hålltider */}
-      <h2 className="mb-3 inline-block border-b-4 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
+      <h2 className="mb-3 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
         Inlagda hålltider
       </h2>
       {events.length === 0 ? (
-        <p className="rounded-xl border-2 border-dashed border-paper/40 px-4 py-6 text-center font-semibold text-paper/70">
+        <p className="rounded-xl border border-dashed border-paper/30 px-4 py-6 text-center font-semibold text-paper/70">
           Inga hålltider inlagda ännu.
         </p>
       ) : (
@@ -471,7 +471,7 @@ function EventManager({
                 .map((event) => (
                   <li
                     key={event.id}
-                    className="flex items-center gap-3 rounded-xl border-2 border-ink bg-white px-3 py-2 shadow-hard-sm"
+                    className="flex items-center gap-3 rounded-xl bg-white px-3 py-2 shadow-chip"
                   >
                     <span aria-hidden>{EVENT_META[event.type].emoji}</span>
                     <span className="min-w-0 flex-1 truncate text-sm">
@@ -491,14 +491,14 @@ function EventManager({
                     <button
                       type="button"
                       onClick={() => startEdit(event)}
-                      className="rounded-full border-2 border-ink bg-sun px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
+                      className="rounded-full bg-sun px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
                     >
                       Ändra
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDelete(event)}
-                      className="rounded-full border-2 border-ink bg-coral px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
+                      className="rounded-full bg-coral px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
                     >
                       Ta bort
                     </button>
@@ -647,13 +647,13 @@ function PlayersManager({
 
   return (
     <section className="mt-10">
-      <h2 className="mb-3 inline-block border-b-4 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
+      <h2 className="mb-3 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] text-2xl uppercase text-paper">
         Trupperna
       </h2>
 
       <form
         onSubmit={handleSubmit}
-        className="mb-6 rounded-xl border-2 border-ink bg-white p-5 shadow-hard"
+        className="mb-6 rounded-xl bg-white p-5 shadow-card"
       >
         <h3 className="mb-4 font-[family-name:var(--font-display)] text-xl uppercase">
           {editingId ? "Ändra spelare" : "Ny spelare"}
@@ -665,7 +665,7 @@ function PlayersManager({
             <select
               value={form.teamId}
               onChange={(e) => setForm((f) => ({ ...f, teamId: e.target.value }))}
-              className="w-full rounded-lg border-2 border-ink bg-paper px-3 py-2"
+              className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
             >
               <option value="">Inget lag ännu</option>
               {teams.map((team) => (
@@ -685,7 +685,7 @@ function PlayersManager({
               max={99}
               value={form.number}
               onChange={(e) => setForm((f) => ({ ...f, number: e.target.value }))}
-              className="w-full rounded-lg border-2 border-ink bg-paper px-3 py-2"
+              className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
             />
           </label>
         </div>
@@ -698,7 +698,7 @@ function PlayersManager({
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             placeholder="t.ex. Liv Hallin"
-            className="w-full rounded-lg border-2 border-ink bg-paper px-3 py-2"
+            className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
           />
         </label>
 
@@ -714,12 +714,12 @@ function PlayersManager({
             type="file"
             accept="image/*"
             onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)}
-            className="w-full rounded-lg border-2 border-ink bg-paper px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2 text-sm"
           />
         </label>
 
         {message && (
-          <p className="mb-3 rounded-lg border-2 border-ink bg-sun px-3 py-2 text-sm font-bold">
+          <p className="mb-3 rounded-lg bg-sun px-3 py-2 text-sm font-bold">
             {message}
           </p>
         )}
@@ -728,7 +728,7 @@ function PlayersManager({
           <button
             type="submit"
             disabled={busy}
-            className="flex-1 rounded-xl border-2 border-ink bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] text-lg uppercase shadow-hard-sm transition-transform active:scale-95 disabled:opacity-50"
+            className="flex-1 rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] text-lg uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
           >
             {busy ? "Sparar…" : editingId ? "Spara ändringar" : "Lägg till"}
           </button>
@@ -736,7 +736,7 @@ function PlayersManager({
             <button
               type="button"
               onClick={resetForm}
-              className="rounded-xl border-2 border-ink bg-paper px-4 py-2.5 font-bold transition-transform active:scale-95"
+              className="rounded-xl border border-ink/25 bg-paper px-4 py-2.5 font-bold transition-transform active:scale-95"
             >
               Avbryt
             </button>
@@ -787,14 +787,14 @@ function PlayerGroup({
     <div className="mb-5">
       <h3 className="mb-2 flex items-center gap-2 font-[family-name:var(--font-display)] text-lg uppercase text-paper">
         <span
-          className="inline-block h-3 w-3 rounded-full border-2 border-ink"
+          className="inline-block h-3 w-3 rounded-full border border-ink/40"
           style={{ backgroundColor: color ?? "var(--paper)" }}
           aria-hidden
         />
         {title} ({players.length})
       </h3>
       {players.length === 0 ? (
-        <p className="rounded-xl border-2 border-dashed border-paper/40 px-4 py-4 text-center text-sm font-semibold text-paper/70">
+        <p className="rounded-xl border border-dashed border-paper/30 px-4 py-4 text-center text-sm font-semibold text-paper/70">
           {emptyText}
         </p>
       ) : (
@@ -802,7 +802,7 @@ function PlayerGroup({
           {players.map((player) => (
             <li
               key={player.id}
-              className="flex items-center gap-3 rounded-xl border-2 border-ink bg-white px-3 py-2 shadow-hard-sm"
+              className="flex items-center gap-3 rounded-xl bg-white px-3 py-2 shadow-chip"
             >
               {player.photo_url ? (
                 <Image
@@ -810,10 +810,10 @@ function PlayerGroup({
                   alt={player.name}
                   width={40}
                   height={40}
-                  className="h-10 w-10 rounded-lg border-2 border-ink object-cover"
+                  className="h-10 w-10 rounded-lg object-cover"
                 />
               ) : (
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-ink bg-paper">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-paper">
                   ⚽
                 </span>
               )}
@@ -828,14 +828,14 @@ function PlayerGroup({
               <button
                 type="button"
                 onClick={() => onEdit(player)}
-                className="rounded-full border-2 border-ink bg-sun px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
+                className="rounded-full bg-sun px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
               >
                 Ändra
               </button>
               <button
                 type="button"
                 onClick={() => onDelete(player)}
-                className="rounded-full border-2 border-ink bg-coral px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
+                className="rounded-full bg-coral px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
               >
                 Ta bort
               </button>
