@@ -4,28 +4,17 @@ import ScheduleView from "@/components/ScheduleView";
 export default async function Home() {
   const supabase = await createClient();
 
-  const [
-    { data: teams },
-    { data: events },
-    { data: matches },
-    { data: standings },
-    { data: players },
-  ] = await Promise.all([
-    supabase.from("teams").select("*").order("name"),
-    supabase
-      .from("events")
-      .select("*")
-      .order("day")
-      .order("starts_at", { nullsFirst: false })
-      .order("sort_hint"),
-    supabase.from("matches").select("*").order("starts_at"),
-    supabase.from("standings").select("*").order("position"),
-    supabase
-      .from("players")
-      .select("*")
-      .order("number", { nullsFirst: false })
-      .order("name"),
-  ]);
+  const [{ data: teams }, { data: events }, { data: matches }] =
+    await Promise.all([
+      supabase.from("teams").select("*").order("name"),
+      supabase
+        .from("events")
+        .select("*")
+        .order("day")
+        .order("starts_at", { nullsFirst: false })
+        .order("sort_hint"),
+      supabase.from("matches").select("*").order("starts_at"),
+    ]);
 
   // Dagens datum i svensk tidszon (sv-SE ger formatet ÅÅÅÅ-MM-DD)
   const today = new Intl.DateTimeFormat("sv-SE", {
@@ -37,8 +26,6 @@ export default async function Home() {
       initialTeams={teams ?? []}
       initialEvents={events ?? []}
       initialMatches={matches ?? []}
-      initialStandings={standings ?? []}
-      initialPlayers={players ?? []}
       today={today}
     />
   );

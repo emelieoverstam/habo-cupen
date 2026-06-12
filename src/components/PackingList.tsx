@@ -2,8 +2,9 @@
 
 // Packlista för cuphelgen (från förra årets sajt). Avbockningen sparas
 // i localStorage så varje familj har sin egen lista på sin enhet.
+// När allt är ibockat regnar det konfetti!
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 
 const ITEMS = [
   { emoji: "⚽", text: "Matchdress" },
@@ -53,6 +54,14 @@ const ITEMS = [
 ];
 
 const STORAGE_KEY = "habocupen-packlista";
+const CONFETTI_COLORS = [
+  "var(--sun)",
+  "var(--grass)",
+  "var(--mint)",
+  "var(--paper)",
+  "var(--ochre)",
+  "var(--falu)",
+];
 
 /* Liten localStorage-store så att avbockningen är hydration-säker
    (servern renderar oavbockat, klienten läser sparat läge) */
@@ -88,16 +97,70 @@ function toggleItem(index: number) {
   listeners.forEach((l) => l());
 }
 
+type ConfettiPiece = {
+  left: number;
+  delay: number;
+  duration: number;
+  width: number;
+  height: number;
+  color: string;
+};
+
+/* Slumpas fram i klickhanteraren när sista saken bockas i */
+function makeConfetti(): ConfettiPiece[] {
+  return Array.from({ length: 120 }, (_, i) => ({
+    left: Math.random() * 100,
+    delay: Math.random() * 1.8,
+    duration: 2.4 + Math.random() * 2,
+    width: 6 + Math.random() * 5,
+    height: 10 + Math.random() * 8,
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+  }));
+}
+
+/* Fullskärms konfettiregn */
+function Confetti({ pieces }: { pieces: ConfettiPiece[] }) {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 z-50 overflow-hidden"
+    >
+      {pieces.map((piece, i) => (
+        <span
+          key={i}
+          className="confetti-piece"
+          style={{
+            left: `${piece.left}%`,
+            width: piece.width,
+            height: piece.height,
+            backgroundColor: piece.color,
+            animationDelay: `${piece.delay}s`,
+            animationDuration: `${piece.duration}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function PackingList() {
   const raw = useSyncExternalStore(subscribe, getSnapshot, () => "[]");
   const checked = useMemo(() => new Set<number>(JSON.parse(raw)), [raw]);
   const allDone = checked.size === ITEMS.length;
+  const [confetti, setConfetti] = useState<ConfettiPiece[] | null>(null);
+
+  function handleToggle(index: number, wasDone: boolean) {
+    toggleItem(index);
+    // Konfetti när sista saken bockas i
+    if (!wasDone && checked.size + 1 === ITEMS.length) {
+      setConfetti(makeConfetti());
+      window.setTimeout(() => setConfetti(null), 5500);
+    }
+  }
 
   return (
-    <section className="mt-10">
-      <h2 className="mb-4 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] font-bold text-xl uppercase text-paper">
-        Packlista
-      </h2>
+    <>
+      {confetti && <Confetti pieces={confetti} />}
 
       <div className="rounded-xl bg-white p-4 shadow-card">
         {/* Packstatus */}
@@ -129,7 +192,7 @@ export default function PackingList() {
               <li key={item.text}>
                 <button
                   type="button"
-                  onClick={() => toggleItem(index)}
+                  onClick={() => handleToggle(index, done)}
                   aria-pressed={done}
                   className="flex w-full items-center gap-3 py-2.5 text-left"
                 >
@@ -163,6 +226,6 @@ export default function PackingList() {
       <p className="mt-2 text-center text-xs font-semibold text-paper/50">
         Avbockningen sparas bara på den här enheten.
       </p>
-    </section>
+    </>
   );
 }

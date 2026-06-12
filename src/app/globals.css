@@ -141,6 +141,25 @@ body {
   }
 }
 
+/* Konfettiregn när hela packlistan är ibockad */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0.6;
+  }
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -10vh;
+  border-radius: 2px;
+  animation: confetti-fall linear both;
+}
+
 /* Pulserande "live"-prick */
 @keyframes live-pulse {
   0%,
@@ -174,5 +193,9 @@ body {
   .card-tilt-l,
   .card-tilt-r {
     transform: none;
+  }
+
+  .confetti-piece {
+    display: none;
   }
 }
