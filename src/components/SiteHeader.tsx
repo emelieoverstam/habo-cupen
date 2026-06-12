@@ -10,6 +10,7 @@ const TABS = [
   { href: "/tabeller", label: "Tabeller", key: "tabeller" },
   { href: "/trupperna", label: "Trupperna", key: "trupperna" },
   { href: "/packlista", label: "Packlista", key: "packlista" },
+  { href: "/tjugan", label: "Tjugan", key: "tjugan" },
 ] as const;
 
 export type SiteTab = (typeof TABS)[number]["key"];
