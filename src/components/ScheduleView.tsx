@@ -105,6 +105,18 @@ function itemKey(item: TimelineItem) {
   return item.kind === "event" ? item.event.id : item.match.id;
 }
 
+/* "om 2 dagar 4 tim", "om 3 tim 12 min", "om 5 min" eller "nu" */
+function formatCountdown(ms: number) {
+  const totalMinutes = Math.round(ms / 60_000);
+  if (totalMinutes < 1) return "nu";
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return `om ${days} ${days === 1 ? "dag" : "dagar"} ${hours} tim`;
+  if (hours > 0) return `om ${hours} tim ${minutes} min`;
+  return `om ${minutes} min`;
+}
+
 export default function ScheduleView({
   initialTeams,
   initialEvents,
@@ -246,6 +258,28 @@ export default function ScheduleView({
     return next ? itemKey(next) : null;
   }, [dayItems, now, activeDay, today]);
 
+  // Nästa händelse över alla dagar — för nedräkningen under rubriken
+  const nextUpcoming = useMemo(() => {
+    if (!now) return null;
+    const upcoming: { time: string; day: string; label: string }[] = [];
+    for (const e of events) {
+      if (e.starts_at && e.status !== "cancelled") {
+        upcoming.push({ time: e.starts_at, day: e.day, label: e.title });
+      }
+    }
+    for (const m of matches) {
+      if (m.starts_at && m.day) {
+        upcoming.push({
+          time: m.starts_at,
+          day: m.day,
+          label: `${m.home_team} – ${m.away_team}`,
+        });
+      }
+    }
+    upcoming.sort((a, b) => (a.time < b.time ? -1 : 1));
+    return upcoming.find((u) => new Date(u.time) > now) ?? null;
+  }, [events, matches, now]);
+
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-16">
       {/* Affischrubrik */}
@@ -268,6 +302,22 @@ export default function ScheduleView({
           />
           Schema, resultat och tabeller uppdateras live
         </p>
+
+        {/* Nedräkning till nästa händelse — tryck för att hoppa till dagen */}
+        {nextUpcoming && now && (
+          <button
+            type="button"
+            onClick={() => setSelectedDay(nextUpcoming.day)}
+            className="mt-4 inline-flex max-w-full items-baseline gap-2 rounded-full border border-paper/30 bg-paper/10 px-4 py-2 text-sm font-semibold text-paper transition-transform active:scale-95"
+          >
+            <span className="truncate">{nextUpcoming.label}</span>
+            <span className="shrink-0 font-[family-name:var(--font-display)] font-bold text-sun">
+              {formatCountdown(
+                new Date(nextUpcoming.time).getTime() - now.getTime()
+              )}
+            </span>
+          </button>
+        )}
       </header>
 
       {days.length === 0 ? (
