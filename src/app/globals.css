@@ -32,20 +32,14 @@
 
 body {
   color: var(--ink);
-  /* Mörkgrön botten med ljusare lyster upptill (som fjolårets klubbsida)
-     och ett diskret créme-prickraster för affischkänslan */
+  /* Jämn mörkgrön botten med diskret créme-prickraster — sömlöst
+     tilande utan synliga gradientskarvar */
   background-color: var(--pine);
-  background-image:
-    radial-gradient(
-      ellipse 130% 70% at 50% -10%,
-      color-mix(in srgb, #2f7a48 60%, transparent),
-      transparent 65%
-    ),
-    radial-gradient(
-      color-mix(in srgb, var(--paper) 7%, transparent) 1.5px,
-      transparent 1.5px
-    );
-  background-size: auto, 22px 22px;
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--paper) 7%, transparent) 1.5px,
+    transparent 1.5px
+  );
+  background-size: 22px 22px;
   font-family: var(--font-archivo), sans-serif;
 }
 
