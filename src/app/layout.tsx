@@ -1,19 +1,38 @@
 import type { Metadata, Viewport } from "next";
-import { Graduate, Archivo, Caveat } from "next/font/google";
+import {
+  Graduate,
+  Archivo,
+  Kalam,
+  Itim,
+  Patrick_Hand,
+} from "next/font/google";
 import "./globals.css";
 
-// Graduate för rubriker (collegiate/klubbemblem), Archivo för brödtext,
-// Caveat för autografer på spelarkorten
+// Graduate för rubriker (collegiate/klubbemblem), Archivo för brödtext.
+// Tre handstilsfonter roterar på spelarkorten så att varje spelare får
+// en egen "namnteckning" — med riktig handskriven karaktär.
 const graduate = Graduate({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-graduate",
 });
 
-const caveat = Caveat({
-  weight: ["600", "700"],
+const kalam = Kalam({
+  weight: "700",
   subsets: ["latin", "latin-ext"],
-  variable: "--font-caveat",
+  variable: "--font-autograph-1",
+});
+
+const itim = Itim({
+  weight: "400",
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-autograph-2",
+});
+
+const patrickHand = Patrick_Hand({
+  weight: "400",
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-autograph-3",
 });
 
 const archivo = Archivo({
@@ -39,7 +58,7 @@ export default function RootLayout({
   return (
     <html
       lang="sv"
-      className={`${graduate.variable} ${archivo.variable} ${caveat.variable} h-full antialiased`}
+      className={`${graduate.variable} ${archivo.variable} ${kalam.variable} ${itim.variable} ${patrickHand.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
