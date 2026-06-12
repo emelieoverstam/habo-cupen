@@ -28,6 +28,7 @@
   --color-lilac: var(--lilac);
   --font-display: var(--font-graduate);
   --font-sans: var(--font-archivo);
+  --font-script: var(--font-caveat);
 }
 
 body {

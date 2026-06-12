@@ -1,12 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Graduate, Archivo } from "next/font/google";
+import { Graduate, Archivo, Caveat } from "next/font/google";
 import "./globals.css";
 
-// Graduate för rubriker (collegiate/klubbemblem), Archivo för brödtext
+// Graduate för rubriker (collegiate/klubbemblem), Archivo för brödtext,
+// Caveat för autografer på spelarkorten
 const graduate = Graduate({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-graduate",
+});
+
+const caveat = Caveat({
+  weight: ["600", "700"],
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-caveat",
 });
 
 const archivo = Archivo({
@@ -32,7 +39,7 @@ export default function RootLayout({
   return (
     <html
       lang="sv"
-      className={`${graduate.variable} ${archivo.variable} h-full antialiased`}
+      className={`${graduate.variable} ${archivo.variable} ${caveat.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

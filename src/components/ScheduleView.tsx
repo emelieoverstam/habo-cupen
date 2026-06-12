@@ -710,38 +710,47 @@ function SquadSection({
               />
               {team.name}
             </h3>
-            <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+            <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               {squad.map((player, index) => (
                 <li
                   key={player.id}
                   className="rise"
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
-                  <div className="relative">
-                    <div className="relative aspect-square overflow-hidden rounded-xl bg-white shadow-chip">
-                      {player.photo_url ? (
-                        <Image
-                          src={player.photo_url}
-                          alt={player.name}
-                          fill
-                          sizes="(max-width: 640px) 33vw, 150px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center bg-paper text-4xl">
-                          <span aria-hidden>⚽</span>
-                        </div>
-                      )}
+                  {/* Spelarkort i samlarkortsstil: créme-ram med guldlinje,
+                      porträtt, nummerbricka och namnet som autograf */}
+                  <div className="rounded-xl bg-paper p-1.5 shadow-card">
+                    <div className="rounded-lg border border-sun p-1">
+                      <div className="relative aspect-[3/4] overflow-hidden rounded-md bg-pine/15">
+                        {player.photo_url ? (
+                          <Image
+                            src={player.photo_url}
+                            alt={player.name}
+                            fill
+                            sizes="(max-width: 640px) 50vw, 200px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-5xl">
+                            <span aria-hidden>⚽</span>
+                          </div>
+                        )}
+                        {player.number !== null && (
+                          <span className="absolute left-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-sun font-[family-name:var(--font-display)] font-bold text-sm text-ink shadow-chip">
+                            {player.number}
+                          </span>
+                        )}
+                      </div>
+                      <div className="px-1 pb-1 pt-1.5 text-center">
+                        <p className="truncate font-[family-name:var(--font-script)] text-2xl font-bold leading-none text-ink">
+                          {player.name}
+                        </p>
+                        <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-ink/50">
+                          BK Zeros · {team.name.replace("BK Zeros ", "")}
+                        </p>
+                      </div>
                     </div>
-                    {player.number !== null && (
-                      <span className="absolute -left-1.5 -top-1.5 inline-block -rotate-6 rounded-lg bg-sun px-1.5 py-0.5 font-[family-name:var(--font-display)] font-bold text-sm shadow-chip">
-                        {player.number}
-                      </span>
-                    )}
                   </div>
-                  <p className="mt-1.5 truncate text-center text-sm font-bold text-paper">
-                    {player.name}
-                  </p>
                 </li>
               ))}
             </ul>
