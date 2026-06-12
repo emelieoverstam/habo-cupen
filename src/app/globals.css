@@ -9,10 +9,10 @@
   --sun: #f7c433;
   --grass: #29a166;
   --mint: #5ec78d;
-  --coral: #ed7354;
-  --sky: #6ec4cc;
-  --rose: #ed82a3;
-  --lilac: #d1a1c9;
+  --ochre: #c8833a;
+  --petrol: #34657f;
+  --sage: #6fa08a;
+  --falu: #9e4b43;
 }
 
 @theme inline {
@@ -22,10 +22,10 @@
   --color-sun: var(--sun);
   --color-grass: var(--grass);
   --color-mint: var(--mint);
-  --color-coral: var(--coral);
-  --color-sky: var(--sky);
-  --color-rose: var(--rose);
-  --color-lilac: var(--lilac);
+  --color-ochre: var(--ochre);
+  --color-petrol: var(--petrol);
+  --color-sage: var(--sage);
+  --color-falu: var(--falu);
   --font-display: var(--font-graduate);
   --font-sans: var(--font-archivo);
   --font-script: var(--font-caveat);
@@ -69,6 +69,79 @@ body {
   animation: rise 0.45s ease-out both;
 }
 
+/* Spelarkort: 3D-vändning vid tryck, vilolutning och foil-glans vid hover */
+.card-3d {
+  perspective: 1200px;
+  transition: transform 0.25s ease;
+}
+
+.card-tilt-l {
+  transform: rotate(-1.5deg);
+}
+
+.card-tilt-r {
+  transform: rotate(1.5deg);
+}
+
+.card-3d:hover {
+  transform: rotate(0deg) translateY(-5px);
+}
+
+.card-inner {
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.3, 0.1, 0.2, 1);
+}
+
+.card-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+/* Prickraster på kortets baksida, som på klubbsidans botten */
+.card-back-pattern {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--paper) 10%, transparent) 1.5px,
+    transparent 1.5px
+  );
+  background-size: 14px 14px;
+}
+
+/* Glansen som sveper diagonalt över fotot vid hover */
+.card-shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    110deg,
+    transparent 30%,
+    rgb(255 255 255 / 0.45) 47%,
+    color-mix(in srgb, var(--sun) 35%, transparent) 53%,
+    transparent 70%
+  );
+  transform: translateX(-130%);
+}
+
+.card-3d:hover .card-shine {
+  animation: shine-sweep 0.8s ease;
+}
+
+@keyframes shine-sweep {
+  from {
+    transform: translateX(-130%);
+  }
+  to {
+    transform: translateX(130%);
+  }
+}
+
 /* Pulserande "live"-prick */
 @keyframes live-pulse {
   0%,
@@ -88,5 +161,19 @@ body {
   .rise,
   .live-dot {
     animation: none;
+  }
+
+  .card-3d,
+  .card-inner {
+    transition: none;
+  }
+
+  .card-3d:hover .card-shine {
+    animation: none;
+  }
+
+  .card-tilt-l,
+  .card-tilt-r {
+    transform: none;
   }
 }

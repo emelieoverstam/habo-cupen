@@ -39,6 +39,10 @@ type Props = {
 
 const SYNC_INTERVAL_MS = 3 * 60 * 1000;
 
+// Cupens dagar visas alltid som flikar, även innan något är inlagt
+// (avresedag fredag + matchdagarna lördag och söndag)
+const CUP_DAYS = ["2026-06-26", "2026-06-27", "2026-06-28"];
+
 const timeFormat = new Intl.DateTimeFormat("sv-SE", {
   hour: "2-digit",
   minute: "2-digit",
@@ -121,6 +125,7 @@ export default function ScheduleView({
 
   const days = useMemo(() => {
     const all = [
+      ...CUP_DAYS,
       ...events.map((e) => e.day),
       ...matches.map((m) => m.day),
     ].filter((d): d is string => d !== null);
@@ -480,12 +485,12 @@ function EventCard({
             </h3>
             {isNext && <NextBadge />}
             {event.status === "tbd" && (
-              <span className="rounded-full bg-sky px-2 py-0.5 text-xs font-bold uppercase">
+              <span className="rounded-full bg-petrol px-2 py-0.5 text-xs font-bold uppercase text-paper">
                 Prel. tid
               </span>
             )}
             {cancelled && (
-              <span className="rounded-full bg-coral px-2 py-0.5 text-xs font-bold uppercase">
+              <span className="rounded-full bg-falu px-2 py-0.5 text-xs font-bold uppercase text-paper">
                 Inställd
               </span>
             )}
@@ -717,40 +722,11 @@ function SquadSection({
                   className="rise"
                   style={{ animationDelay: `${index * 30}ms` }}
                 >
-                  {/* Spelarkort i samlarkortsstil: créme-ram med guldlinje,
-                      porträtt, nummerbricka och namnet som autograf */}
-                  <div className="rounded-xl bg-paper p-1.5 shadow-card">
-                    <div className="rounded-lg border border-sun p-1">
-                      <div className="relative aspect-[3/4] overflow-hidden rounded-md bg-pine/15">
-                        {player.photo_url ? (
-                          <Image
-                            src={player.photo_url}
-                            alt={player.name}
-                            fill
-                            sizes="(max-width: 640px) 50vw, 200px"
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full items-center justify-center text-5xl">
-                            <span aria-hidden>⚽</span>
-                          </div>
-                        )}
-                        {player.number !== null && (
-                          <span className="absolute left-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-sun font-[family-name:var(--font-display)] font-bold text-sm text-ink shadow-chip">
-                            {player.number}
-                          </span>
-                        )}
-                      </div>
-                      <div className="px-1 pb-1 pt-1.5 text-center">
-                        <p className="truncate font-[family-name:var(--font-script)] text-2xl font-bold leading-none text-ink">
-                          {player.name}
-                        </p>
-                        <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-ink/50">
-                          BK Zeros · {team.name.replace("BK Zeros ", "")}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  <PlayerCard
+                    player={player}
+                    teamLabel={team.name.replace("BK Zeros ", "")}
+                    tilt={index % 2 === 0 ? "card-tilt-l" : "card-tilt-r"}
+                  />
                 </li>
               ))}
             </ul>
@@ -758,6 +734,86 @@ function SquadSection({
         );
       })}
     </section>
+  );
+}
+
+/* Spelarkort i samlarkortsstil: créme-ram med guldlinje, porträtt,
+   nummerbricka och namnet som autograf. Tryck vänder kortet i 3D och
+   visar baksidan i klubbgrönt; vid hover lyfter kortet med foil-glans. */
+function PlayerCard({
+  player,
+  teamLabel,
+  tilt,
+}: {
+  player: Player;
+  teamLabel: string;
+  tilt: string;
+}) {
+  const [flipped, setFlipped] = useState(false);
+
+  return (
+    <button
+      type="button"
+      onClick={() => setFlipped((f) => !f)}
+      aria-pressed={flipped}
+      aria-label={`Vänd spelarkortet för ${player.name}`}
+      className={`card-3d block w-full cursor-pointer text-left ${tilt}`}
+    >
+      <div className={`card-inner relative ${flipped ? "is-flipped" : ""}`}>
+        {/* Framsida */}
+        <div className="card-face rounded-xl bg-paper p-1.5 shadow-card">
+          <div className="rounded-lg border border-sun p-1">
+            <div className="relative aspect-[3/4] overflow-hidden rounded-md bg-pine/15">
+              {player.photo_url ? (
+                <Image
+                  src={player.photo_url}
+                  alt={player.name}
+                  fill
+                  sizes="(max-width: 640px) 50vw, 200px"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-5xl">
+                  <span aria-hidden>⚽</span>
+                </div>
+              )}
+              {player.number !== null && (
+                <span className="absolute left-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-sun font-[family-name:var(--font-display)] font-bold text-sm text-ink shadow-chip">
+                  {player.number}
+                </span>
+              )}
+              <span className="card-shine" aria-hidden />
+            </div>
+            <div className="px-1 pb-1 pt-1.5 text-center">
+              <p className="truncate font-[family-name:var(--font-script)] text-2xl font-bold leading-none text-ink">
+                {player.name}
+              </p>
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-ink/50">
+                BK Zeros · {teamLabel}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Baksida */}
+        <div className="card-face card-back absolute inset-0 rounded-xl bg-pine p-1.5 shadow-card">
+          <div className="card-back-pattern flex h-full flex-col items-center justify-center gap-2 rounded-lg border border-sun/70 px-2 text-center">
+            <p className="font-[family-name:var(--font-display)] font-bold text-xs tracking-[0.3em] text-sun">
+              BK ZEROS
+            </p>
+            <p className="font-[family-name:var(--font-display)] font-bold text-6xl leading-none text-paper">
+              {player.number ?? "⚽"}
+            </p>
+            <p className="w-full truncate font-[family-name:var(--font-script)] text-2xl font-bold leading-tight text-sun">
+              {player.name}
+            </p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-paper/60">
+              Habo-cupen 2026 · {teamLabel}
+            </p>
+          </div>
+        </div>
+      </div>
+    </button>
   );
 }
 

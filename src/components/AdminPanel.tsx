@@ -190,7 +190,7 @@ function LoginForm({
         />
       </label>
       {error && (
-        <p className="mb-3 rounded-lg bg-coral px-3 py-2 text-sm font-bold">
+        <p className="mb-3 rounded-lg bg-falu px-3 py-2 text-sm font-bold text-paper">
           {error}
         </p>
       )}
@@ -498,7 +498,7 @@ function EventManager({
                     <button
                       type="button"
                       onClick={() => handleDelete(event)}
-                      className="rounded-full bg-coral px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
+                      className="rounded-full bg-falu px-2.5 py-0.5 text-xs font-bold text-paper transition-transform active:scale-95"
                     >
                       Ta bort
                     </button>
@@ -835,7 +835,7 @@ function PlayerGroup({
               <button
                 type="button"
                 onClick={() => onDelete(player)}
-                className="rounded-full bg-coral px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
+                className="rounded-full bg-falu px-2.5 py-0.5 text-xs font-bold text-paper transition-transform active:scale-95"
               >
                 Ta bort
               </button>
