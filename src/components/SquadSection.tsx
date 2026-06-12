@@ -1,10 +1,15 @@
-// Trupperna som spelarkort i samlarkortsstil
-import { useState } from "react";
+// Trupperna som spelarkort i samlarkortsstil, med en "reveal" där
+// korten vänds upp ett i taget — spelas upp automatiskt första gången
+// och kan köras igen via knappen.
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import type { Tables } from "@/types/database";
 
 type Team = Tables<"teams">;
 type Player = Tables<"players">;
+
+const REVEAL_KEY = "habocupen-trupp-reveal";
+const REVEAL_STEP_MS = 550;
 
 /* Autografen får en lätt individuell lutning (stabil utifrån spelarens
    id). Långa namn blir mindre så att de inte klipps. */
@@ -32,6 +37,72 @@ export default function SquadSection({
   const teamsWithPlayers = teams.filter((t) =>
     players.some((p) => p.team_id === t.id)
   );
+  const totalPlayers = teamsWithPlayers.reduce(
+    (sum, t) => sum + players.filter((p) => p.team_id === t.id).length,
+    0
+  );
+
+  // null = ingen reveal igång; annars hur många kort som vänts upp
+  const [revealStage, setRevealStage] = useState<number | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function startReveal() {
+    if (totalPlayers === 0) return;
+
+    // Med "minska rörelse" hoppar vi över hela uppspelningen
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      try {
+        localStorage.setItem(REVEAL_KEY, "1");
+      } catch {}
+      return;
+    }
+
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setRevealStage(0);
+    let stage = 0;
+    intervalRef.current = setInterval(() => {
+      stage += 1;
+      setRevealStage(stage);
+
+      // Följ med i uppspelningen: scrolla kortet som vänds till mitten
+      const card = document.querySelector(`[data-card-index="${stage - 1}"]`);
+      card?.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      if (stage > totalPlayers) {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        setRevealStage(null);
+        try {
+          localStorage.setItem(REVEAL_KEY, "1");
+        } catch {
+          // privat läge — då spelas revealen helt enkelt vid varje besök
+        }
+      }
+    }, REVEAL_STEP_MS);
+  }
+
+  // Spela upp automatiskt vid första besöket
+  useEffect(() => {
+    let seen = "1";
+    try {
+      seen = localStorage.getItem(REVEAL_KEY) ?? "";
+    } catch {
+      seen = "1";
+    }
+    if (seen) return;
+    const timer = setTimeout(startReveal, 700);
+    return () => clearTimeout(timer);
+    // React-kompilatorn memoiserar startReveal åt oss — useCallback här
+    // krockar med react-hooks/preserve-manual-memoization
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Städa intervallet om sidan lämnas mitt i revealen
+  useEffect(
+    () => () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    },
+    []
+  );
 
   if (teamsWithPlayers.length === 0) {
     return (
@@ -41,8 +112,22 @@ export default function SquadSection({
     );
   }
 
+  const revealActive = revealStage !== null;
+  let globalIndex = 0;
+
   return (
     <>
+      <div className="mb-4 text-center">
+        <button
+          type="button"
+          onClick={startReveal}
+          disabled={revealActive}
+          className="rounded-full border border-paper/30 bg-paper/10 px-4 py-1.5 text-sm font-bold text-paper transition-transform active:scale-95 disabled:opacity-50"
+        >
+          {revealActive ? "Presenterar…" : "🎬 Presentera lagen"}
+        </button>
+      </div>
+
       {teamsWithPlayers.map((team) => {
         const squad = players.filter((p) => p.team_id === team.id);
         return (
@@ -56,19 +141,27 @@ export default function SquadSection({
               {team.name}
             </h2>
             <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {squad.map((player, index) => (
-                <li
-                  key={player.id}
-                  className="rise"
-                  style={{ animationDelay: `${index * 30}ms` }}
-                >
-                  <PlayerCard
-                    player={player}
-                    teamLabel={team.name.replace("BK Zeros ", "")}
-                    tilt={index % 2 === 0 ? "card-tilt-l" : "card-tilt-r"}
-                  />
-                </li>
-              ))}
+              {squad.map((player, index) => {
+                const cardIndex = globalIndex++;
+                return (
+                  <li
+                    key={player.id}
+                    data-card-index={cardIndex}
+                    className="rise"
+                    style={{ animationDelay: `${index * 30}ms` }}
+                  >
+                    <PlayerCard
+                      player={player}
+                      teamLabel={team.name.replace("BK Zeros ", "")}
+                      tilt={index % 2 === 0 ? "card-tilt-l" : "card-tilt-r"}
+                      revealActive={revealActive}
+                      revealShown={
+                        revealStage !== null && revealStage > cardIndex
+                      }
+                    />
+                  </li>
+                );
+              })}
             </ul>
           </div>
         );
@@ -79,23 +172,31 @@ export default function SquadSection({
 
 /* Spelarkort i samlarkortsstil: créme-ram med guldlinje, porträtt,
    nummerbricka och namnet som autograf. Tryck vänder kortet i 3D och
-   visar baksidan i klubbgrönt; vid hover lyfter kortet med foil-glans. */
+   visar baksidan i klubbgrönt; vid hover lyfter kortet med foil-glans.
+   Under revealen styrs vändningen av sekvensen i stället. */
 function PlayerCard({
   player,
   teamLabel,
   tilt,
+  revealActive,
+  revealShown,
 }: {
   player: Player;
   teamLabel: string;
   tilt: string;
+  revealActive: boolean;
+  revealShown: boolean;
 }) {
-  const [flipped, setFlipped] = useState(false);
+  const [userFlipped, setUserFlipped] = useState(false);
   const autograph = autographFor(player.id, player.name);
+  const flipped = revealActive ? !revealShown : userFlipped;
 
   return (
     <button
       type="button"
-      onClick={() => setFlipped((f) => !f)}
+      onClick={() => {
+        if (!revealActive) setUserFlipped((f) => !f);
+      }}
       aria-pressed={flipped}
       aria-label={`Vänd spelarkortet för ${player.name}`}
       className={`card-3d block w-full cursor-pointer text-left ${tilt}`}
@@ -146,15 +247,24 @@ function PlayerCard({
             <p className="font-[family-name:var(--font-display)] font-bold text-xs tracking-[0.3em] text-sun">
               BK ZEROS
             </p>
-            <p className="font-[family-name:var(--font-display)] font-bold text-6xl leading-none text-paper">
-              {player.number ?? "⚽"}
-            </p>
-            <p
-              className={`w-full truncate ${autograph.size} ${autograph.tilt} leading-tight text-sun`}
-              style={{ fontFamily: autograph.font }}
-            >
-              {player.name}
-            </p>
+            {revealActive ? (
+              // Under revealen avslöjar baksidan inget om spelaren
+              <p className="text-4xl" aria-hidden>
+                ⚽
+              </p>
+            ) : (
+              <>
+                <p className="font-[family-name:var(--font-display)] font-bold text-6xl leading-none text-paper">
+                  {player.number ?? "⚽"}
+                </p>
+                <p
+                  className={`w-full truncate ${autograph.size} ${autograph.tilt} leading-tight text-sun`}
+                  style={{ fontFamily: autograph.font }}
+                >
+                  {player.name}
+                </p>
+              </>
+            )}
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-paper/60">
               Habo-cupen 2026 · {teamLabel}
             </p>
