@@ -748,7 +748,8 @@ function autographFor(id: string, name: string) {
   return {
     font: AUTOGRAPH_FONTS[hash % AUTOGRAPH_FONTS.length],
     tilt: AUTOGRAPH_TILTS[hash % AUTOGRAPH_TILTS.length],
-    size: name.length > 14 ? "text-2xl" : "text-3xl",
+    // Ms Madi är bred — krymp tidigt så att namnen inte klipps
+    size: name.length > 12 ? "text-xl" : "text-2xl",
   };
 }
 

@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Graduate, Archivo, Comforter } from "next/font/google";
+import { Graduate, Archivo, Ms_Madi } from "next/font/google";
 import "./globals.css";
 
 // Graduate för rubriker (collegiate/klubbemblem), Archivo för brödtext,
-// Comforter för autograferna på spelarkorten.
+// Ms Madi för autograferna på spelarkorten.
 // (Cedarville Cursive provades men saknar å/ä/ö.)
 const graduate = Graduate({
   weight: "400",
@@ -11,7 +11,7 @@ const graduate = Graduate({
   variable: "--font-graduate",
 });
 
-const comforter = Comforter({
+const msMadi = Ms_Madi({
   weight: "400",
   subsets: ["latin", "latin-ext"],
   variable: "--font-autograph-1",
@@ -40,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="sv"
-      className={`${graduate.variable} ${archivo.variable} ${comforter.variable} h-full antialiased`}
+      className={`${graduate.variable} ${archivo.variable} ${msMadi.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
