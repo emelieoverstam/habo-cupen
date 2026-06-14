@@ -3,6 +3,7 @@
 // och kan köras igen via knappen.
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import ClubCrest from "@/components/ClubCrest";
 import {
   Confetti,
   makeConfetti,
@@ -306,6 +307,7 @@ function PlayerCard({
               >
                 {player.name}
               </p>
+              <ClubCrest className="mx-auto mt-1 h-4 w-auto opacity-70" />
               <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-ink/50">
                 BK Zeros · {teamLabel}
               </p>
@@ -316,9 +318,7 @@ function PlayerCard({
         {/* Baksida */}
         <div className="card-face card-back absolute inset-0 rounded-xl bg-pine p-1.5 shadow-card">
           <div className="card-back-pattern flex h-full flex-col items-center justify-center gap-2 rounded-lg border border-sun/70 px-2 text-center">
-            <p className="font-[family-name:var(--font-display)] font-bold text-xs tracking-[0.3em] text-sun">
-              BK ZEROS
-            </p>
+            <ClubCrest className="h-9 w-auto" />
             {revealActive ? (
               // Under revealen avslöjar baksidan inget om spelaren
               <p className="text-4xl" aria-hidden>

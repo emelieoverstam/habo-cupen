@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import ClubCrest from "@/components/ClubCrest";
 
 const TABS = [
   { href: "/", label: "Hem", key: "hem" },
@@ -92,6 +93,10 @@ export default function SiteHeader({
         </div>
       )}
 
+      <ClubCrest
+        className="mx-auto mb-3 h-12 w-auto opacity-90 drop-shadow"
+        alt="BK Zeros klubbmärke"
+      />
       <p className="mb-1 text-xs font-bold uppercase tracking-[0.3em] text-sun">
         26–28 juni
       </p>
