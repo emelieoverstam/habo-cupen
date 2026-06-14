@@ -69,6 +69,63 @@ export type Database = {
           },
         ]
       }
+      match_briefings: {
+        Row: {
+          bench: Json
+          created_at: string
+          defensive: string | null
+          formation: string | null
+          id: string
+          lineup: Json
+          match_id: string | null
+          note: string | null
+          offensive: string | null
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          bench?: Json
+          created_at?: string
+          defensive?: string | null
+          formation?: string | null
+          id?: string
+          lineup?: Json
+          match_id?: string | null
+          note?: string | null
+          offensive?: string | null
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          bench?: Json
+          created_at?: string
+          defensive?: string | null
+          formation?: string | null
+          id?: string
+          lineup?: Json
+          match_id?: string | null
+          note?: string | null
+          offensive?: string | null
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_briefings_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_briefings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           away_score: number | null
