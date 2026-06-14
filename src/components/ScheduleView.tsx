@@ -12,10 +12,13 @@ import { useCurrentMinute, formatCountdown } from "@/lib/time";
 import SiteHeader from "@/components/SiteHeader";
 import TeamMarker from "@/components/TeamMarker";
 import type { Tables } from "@/types/database";
+import { type Briefing, parseBriefing, pickBriefing } from "@/lib/briefing";
+import MatchBriefing from "@/components/MatchBriefing";
 
 type Team = Tables<"teams">;
 type CupEvent = Tables<"events">;
 type Match = Tables<"matches">;
+type Player = Tables<"players">;
 
 type TimelineItem =
   | { kind: "event"; time: string | null; event: CupEvent }
@@ -25,6 +28,8 @@ type Props = {
   initialTeams: Team[];
   initialEvents: CupEvent[];
   initialMatches: Match[];
+  initialPlayers: Player[];
+  initialBriefings: Briefing[];
   today: string;
 };
 
@@ -78,23 +83,31 @@ export default function ScheduleView({
   initialTeams,
   initialEvents,
   initialMatches,
+  initialPlayers,
+  initialBriefings,
   today,
 }: Props) {
   const [events, setEvents] = useState(initialEvents);
   const [matches, setMatches] = useState(initialMatches);
   const [teams] = useState(initialTeams);
+  const [players, setPlayers] = useState(initialPlayers);
+  const [briefings, setBriefings] = useState(initialBriefings);
   const [teamFilter, setTeamFilter] = useState<string | null>(null);
   // null under SSR/hydration, därefter aktuell tid som tickar varje minut
   const now = useCurrentMinute();
 
   const refresh = useCallback(async () => {
     const supabase = createClient();
-    const [eventsRes, matchesRes] = await Promise.all([
+    const [eventsRes, matchesRes, playersRes, briefingsRes] = await Promise.all([
       supabase.from("events").select("*"),
       supabase.from("matches").select("*"),
+      supabase.from("players").select("*"),
+      supabase.from("match_briefings").select("*"),
     ]);
     if (eventsRes.data) setEvents(eventsRes.data);
     if (matchesRes.data) setMatches(matchesRes.data);
+    if (playersRes.data) setPlayers(playersRes.data);
+    if (briefingsRes.data) setBriefings(briefingsRes.data.map(parseBriefing));
   }, []);
 
   useScheduleLive(refresh);
@@ -293,6 +306,16 @@ export default function ScheduleView({
         key={item.match.id}
         match={item.match}
         team={matchTeam(item.match)}
+        briefing={
+          matchTeam(item.match)
+            ? pickBriefing(
+                briefings,
+                matchTeam(item.match)!.id,
+                item.match.id
+              )
+            : null
+        }
+        players={players}
         isNext={itemKey(item) === nextItemKey}
         delayMs={index * 40}
         dimmed={dimmed}
@@ -552,18 +575,24 @@ function EventCard({
 function MatchCard({
   match,
   team,
+  briefing,
+  players,
   isNext,
   delayMs,
   dimmed,
 }: {
   match: Match;
   team?: Team;
+  briefing: Briefing | null;
+  players: Player[];
   isNext: boolean;
   delayMs: number;
   dimmed?: boolean;
 }) {
   const meta = EVENT_META.match;
   const played = match.home_score !== null && match.away_score !== null;
+  const [open, setOpen] = useState(false);
+  const hasBriefing = !!briefing && !!team;
 
   return (
     <li
@@ -611,6 +640,27 @@ function MatchCard({
           </div>
         )}
       </div>
+
+      {hasBriefing && (
+        <div className="border-t border-ink/10 px-5 pb-1">
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            className="flex w-full items-center justify-between py-2.5 text-sm font-bold text-grass"
+          >
+            Matchgenomgång
+            <span aria-hidden className={open ? "rotate-180" : ""}>
+              ▾
+            </span>
+          </button>
+          {open && (
+            <div className="pb-4">
+              <MatchBriefing briefing={briefing} players={players} />
+            </div>
+          )}
+        </div>
+      )}
     </li>
   );
 }

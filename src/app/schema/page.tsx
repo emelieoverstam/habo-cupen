@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { parseBriefing } from "@/lib/briefing";
 import ScheduleView from "@/components/ScheduleView";
 
 export const metadata: Metadata = {
@@ -11,17 +12,28 @@ export const metadata: Metadata = {
 export default async function SchemaPage() {
   const supabase = await createClient();
 
-  const [{ data: teams }, { data: events }, { data: matches }] =
-    await Promise.all([
-      supabase.from("teams").select("*").order("name"),
-      supabase
-        .from("events")
-        .select("*")
-        .order("day")
-        .order("starts_at", { nullsFirst: false })
-        .order("sort_hint"),
-      supabase.from("matches").select("*").order("starts_at"),
-    ]);
+  const [
+    { data: teams },
+    { data: events },
+    { data: matches },
+    { data: players },
+    { data: briefings },
+  ] = await Promise.all([
+    supabase.from("teams").select("*").order("name"),
+    supabase
+      .from("events")
+      .select("*")
+      .order("day")
+      .order("starts_at", { nullsFirst: false })
+      .order("sort_hint"),
+    supabase.from("matches").select("*").order("starts_at"),
+    supabase
+      .from("players")
+      .select("*")
+      .order("number", { nullsFirst: false })
+      .order("name"),
+    supabase.from("match_briefings").select("*"),
+  ]);
 
   // Dagens datum i svensk tidszon (sv-SE ger formatet ÅÅÅÅ-MM-DD)
   const today = new Intl.DateTimeFormat("sv-SE", {
@@ -33,6 +45,8 @@ export default async function SchemaPage() {
       initialTeams={teams ?? []}
       initialEvents={events ?? []}
       initialMatches={matches ?? []}
+      initialPlayers={players ?? []}
+      initialBriefings={(briefings ?? []).map(parseBriefing)}
       today={today}
     />
   );
