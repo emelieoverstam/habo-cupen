@@ -142,6 +142,30 @@ export default function ScheduleView({
     return [...eventItems, ...matchItems].sort(sortItems);
   }, [events, matches, activeDay, teamFilter, teamById]);
 
+  const isToday = activeDay === today;
+
+  /* En punkt räknas som passerad när den börjat (matcher: när de spelats
+     klart, ~45 min). Bara på innevarande dag tonas/fälls passerat ihop. */
+  const { pastItems, restItems } = useMemo(() => {
+    if (!now || !isToday) {
+      return { pastItems: [] as TimelineItem[], restItems: dayItems };
+    }
+    const past: TimelineItem[] = [];
+    const rest: TimelineItem[] = [];
+    for (const item of dayItems) {
+      const t = item.time ? new Date(item.time).getTime() : null;
+      const dur = item.kind === "match" ? 45 * 60_000 : 0;
+      if (t !== null && t + dur < now.getTime()) past.push(item);
+      else rest.push(item);
+    }
+    return { pastItems: past, restItems: rest };
+  }, [dayItems, now, isToday]);
+
+  const [showEarlier, setShowEarlier] = useState(false);
+  // Visa max två passerade punkter, äldre fälls ihop bakom en knapp
+  const visiblePast = showEarlier ? pastItems : pastItems.slice(-2);
+  const hiddenCount = pastItems.length - visiblePast.length;
+
   // Nästa kommande punkt i dag — markeras med "Härnäst"
   const nextItemKey = useMemo(() => {
     if (!now || activeDay !== today) return null;
@@ -153,13 +177,28 @@ export default function ScheduleView({
     return next ? itemKey(next) : null;
   }, [dayItems, now, activeDay, today]);
 
-  // Nästa händelse över alla dagar — för nedräkningen under rubriken
+  // Nästa händelse över alla dagar — för den tydliga nedräkningen högst upp
   const nextUpcoming = useMemo(() => {
     if (!now) return null;
-    const upcoming: { time: string; day: string; label: string }[] = [];
+    type Up = {
+      time: string;
+      day: string;
+      label: string;
+      emoji: string;
+      dayLabel: string;
+      isToday: boolean;
+    };
+    const upcoming: Up[] = [];
     for (const e of events) {
       if (e.starts_at && e.status !== "cancelled") {
-        upcoming.push({ time: e.starts_at, day: e.day, label: e.title });
+        upcoming.push({
+          time: e.starts_at,
+          day: e.day,
+          label: e.title,
+          emoji: EVENT_META[e.type].emoji,
+          dayLabel: tabFormat.format(dayToDate(e.day)),
+          isToday: e.day === today,
+        });
       }
     }
     for (const m of matches) {
@@ -168,33 +207,44 @@ export default function ScheduleView({
           time: m.starts_at,
           day: m.day,
           label: `${m.home_team} – ${m.away_team}`,
+          emoji: "⚽",
+          dayLabel: tabFormat.format(dayToDate(m.day)),
+          isToday: m.day === today,
         });
       }
     }
     upcoming.sort((a, b) => (a.time < b.time ? -1 : 1));
     return upcoming.find((u) => new Date(u.time) > now) ?? null;
-  }, [events, matches, now]);
+  }, [events, matches, now, today]);
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-16">
       <SiteHeader active="schema" />
 
-      {/* Nedräkning till nästa händelse — tryck för att hoppa till dagen */}
+      {/* Tydlig nedräkning till nästa händelse – tryck för att hoppa dit */}
       {nextUpcoming && now && (
-        <div className="-mt-1 mb-4 text-center">
-          <button
-            type="button"
-            onClick={() => setSelectedDay(nextUpcoming.day)}
-            className="inline-flex max-w-full items-baseline gap-2 rounded-full border border-paper/30 bg-paper/10 px-4 py-2 text-sm font-semibold text-paper transition-transform active:scale-95"
-          >
-            <span className="truncate">{nextUpcoming.label}</span>
-            <span className="shrink-0 font-[family-name:var(--font-display)] font-bold text-sun">
-              {formatCountdown(
-                new Date(nextUpcoming.time).getTime() - now.getTime()
-              )}
+        <button
+          type="button"
+          onClick={() => setSelectedDay(nextUpcoming.day)}
+          className="mb-5 flex w-full items-center gap-3 rounded-xl bg-white px-4 py-3 text-left shadow-card"
+        >
+          <span className="text-2xl" aria-hidden>
+            {nextUpcoming.emoji}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[10px] font-bold uppercase tracking-[0.25em] text-ink/50">
+              Härnäst{!nextUpcoming.isToday && ` · ${nextUpcoming.dayLabel}`}
             </span>
-          </button>
-        </div>
+            <span className="block truncate text-base font-bold leading-tight">
+              {nextUpcoming.label}
+            </span>
+          </span>
+          <span className="shrink-0 rounded-lg bg-sun px-3 py-1.5 text-center font-[family-name:var(--font-display)] font-bold text-lg leading-none shadow-chip">
+            {formatCountdown(
+              new Date(nextUpcoming.time).getTime() - now.getTime()
+            )}
+          </span>
+        </button>
       )}
 
       {/* Dagflikar */}
@@ -257,7 +307,24 @@ export default function ScheduleView({
         </p>
       ) : (
         <ol className="space-y-3">
-          {dayItems.map((item, index) =>
+          {/* Äldre passerade punkter fälls ihop bakom en knapp */}
+          {hiddenCount > 0 && (
+            <li>
+              <button
+                type="button"
+                onClick={() => setShowEarlier(true)}
+                className="w-full rounded-xl border border-dashed border-paper/30 px-4 py-2 text-sm font-bold text-paper/70 transition-colors hover:text-paper"
+              >
+                Visa {hiddenCount} tidigare{" "}
+                {hiddenCount === 1 ? "punkt" : "punkter"}
+              </button>
+            </li>
+          )}
+
+          {[
+            ...visiblePast.map((item) => ({ item, dimmed: true })),
+            ...restItems.map((item) => ({ item, dimmed: false })),
+          ].map(({ item, dimmed }, index) =>
             item.kind === "event" ? (
               <EventCard
                 key={item.event.id}
@@ -269,6 +336,7 @@ export default function ScheduleView({
                 }
                 isNext={itemKey(item) === nextItemKey}
                 delayMs={index * 40}
+                dimmed={dimmed}
               />
             ) : (
               <MatchCard
@@ -277,6 +345,7 @@ export default function ScheduleView({
                 team={matchTeam(item.match)}
                 isNext={itemKey(item) === nextItemKey}
                 delayMs={index * 40}
+                dimmed={dimmed}
               />
             )
           )}
@@ -333,19 +402,21 @@ function EventCard({
   team,
   isNext,
   delayMs,
+  dimmed,
 }: {
   event: CupEvent;
   team?: Team;
   isNext: boolean;
   delayMs: number;
+  dimmed?: boolean;
 }) {
   const meta = EVENT_META[event.type];
   const cancelled = event.status === "cancelled";
 
   return (
     <li
-      className={`rise relative overflow-hidden rounded-xl bg-white shadow-card ${
-        cancelled ? "opacity-60" : ""
+      className={`rise relative overflow-hidden rounded-xl bg-white shadow-card transition-opacity ${
+        dimmed ? "opacity-45" : cancelled ? "opacity-60" : ""
       }`}
       style={{ animationDelay: `${delayMs}ms` }}
     >
@@ -412,18 +483,22 @@ function MatchCard({
   team,
   isNext,
   delayMs,
+  dimmed,
 }: {
   match: Match;
   team?: Team;
   isNext: boolean;
   delayMs: number;
+  dimmed?: boolean;
 }) {
   const meta = EVENT_META.match;
   const played = match.home_score !== null && match.away_score !== null;
 
   return (
     <li
-      className="rise relative overflow-hidden rounded-xl bg-white shadow-card"
+      className={`rise relative overflow-hidden rounded-xl bg-white shadow-card transition-opacity ${
+        dimmed ? "opacity-45" : ""
+      }`}
       style={{ animationDelay: `${delayMs}ms` }}
     >
       <div
