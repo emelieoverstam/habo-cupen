@@ -12,7 +12,7 @@ import { useCurrentMinute, formatCountdown } from "@/lib/time";
 import SiteHeader from "@/components/SiteHeader";
 import TeamMarker from "@/components/TeamMarker";
 import type { Tables } from "@/types/database";
-import { type Briefing, parseBriefing, pickBriefing } from "@/lib/briefing";
+import { type Briefing, parseBriefing, pickBriefing, briefingHasContent } from "@/lib/briefing";
 import MatchBriefing from "@/components/MatchBriefing";
 
 type Team = Tables<"teams">;
@@ -592,7 +592,7 @@ function MatchCard({
   const meta = EVENT_META.match;
   const played = match.home_score !== null && match.away_score !== null;
   const [open, setOpen] = useState(false);
-  const hasBriefing = !!briefing && !!team;
+  const hasBriefing = !!team && briefingHasContent(briefing);
 
   return (
     <li
