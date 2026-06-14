@@ -42,3 +42,8 @@ create policy "Inloggade får ändra matchgenomgångar" on match_briefings
 create trigger match_briefings_broadcast
 	after insert or update or delete on match_briefings
 	for each row execute function broadcast_events_changes();
+
+-- Håll updated_at aktuell vid ändringar (samma mönster som events)
+create trigger match_briefings_updated_at
+	before update on match_briefings
+	for each row execute function set_updated_at();
