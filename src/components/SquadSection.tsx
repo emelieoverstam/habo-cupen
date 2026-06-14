@@ -318,17 +318,16 @@ function PlayerCard({
         {/* Baksida */}
         <div className="card-face card-back absolute inset-0 rounded-xl bg-pine p-1.5 shadow-card">
           <div className="card-back-pattern flex h-full flex-col items-center justify-center gap-2 rounded-lg border border-sun/70 px-2 text-center">
-            <ClubCrest className="h-9 w-auto" />
-            {revealActive ? (
-              // Under revealen avslöjar baksidan inget om spelaren
-              <p className="text-4xl" aria-hidden>
-                ⚽
-              </p>
-            ) : (
+            <ClubCrest className="h-14 w-auto" />
+            {/* Under revealen avslöjar baksidan inget om spelaren — då står
+                klubbmärket ensamt */}
+            {!revealActive && (
               <>
-                <p className="font-[family-name:var(--font-display)] font-bold text-6xl leading-none text-paper">
-                  {player.number ?? "⚽"}
-                </p>
+                {player.number !== null && (
+                  <p className="font-[family-name:var(--font-display)] font-bold text-6xl leading-none text-paper">
+                    {player.number}
+                  </p>
+                )}
                 <p
                   className={`w-full truncate ${autograph.size} ${autograph.tilt} leading-tight text-sun`}
                   style={{ fontFamily: autograph.font }}
