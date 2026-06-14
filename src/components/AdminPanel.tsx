@@ -12,11 +12,18 @@ import { createClient } from "@/lib/supabase/client";
 import { EVENT_META, type EventType } from "@/lib/event-meta";
 import { resizeImage } from "@/lib/image";
 import type { Enums, Tables } from "@/types/database";
+import {
+  type Briefing,
+  type LineupSlot,
+  parseBriefing,
+} from "@/lib/briefing";
+import MatchPitch from "@/components/MatchPitch";
 
 type CupEvent = Tables<"events">;
 type Team = Tables<"teams">;
 type Player = Tables<"players">;
 type EventStatus = Enums<"event_status">;
+type Match = Tables<"matches">;
 
 const STATUS_LABELS: Record<EventStatus, string> = {
   confirmed: "Bekräftad",
@@ -80,10 +87,14 @@ export default function AdminPanel({
   initialEvents,
   initialTeams,
   initialPlayers,
+  initialMatches,
+  initialBriefings,
 }: {
   initialEvents: CupEvent[];
   initialTeams: Team[];
   initialPlayers: Player[];
+  initialMatches: Match[];
+  initialBriefings: Briefing[];
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<User | null>(null);
@@ -126,6 +137,13 @@ export default function AdminPanel({
             supabase={supabase}
             teams={initialTeams}
             initialPlayers={initialPlayers}
+          />
+          <BriefingManager
+            supabase={supabase}
+            teams={initialTeams}
+            players={initialPlayers}
+            matches={initialMatches}
+            initialBriefings={initialBriefings}
           />
         </>
       ) : (
@@ -844,5 +862,463 @@ function PlayerGroup({
         </ul>
       )}
     </div>
+  );
+}
+
+// ---- Matchgenomgång ----------------------------------------------------
+
+type BriefingFormState = {
+  formation: string;
+  lineup: LineupSlot[];
+  bench: string[];
+  offensive: string;
+  defensive: string;
+  note: string;
+};
+
+const EMPTY_BRIEFING_FORM: BriefingFormState = {
+  formation: "",
+  lineup: [],
+  bench: [],
+  offensive: "",
+  defensive: "",
+  note: "",
+};
+
+const briefingTimeFormat = new Intl.DateTimeFormat("sv-SE", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Europe/Stockholm",
+});
+
+/* Fyll formuläret från en befintlig genomgång (för redigering/förifyllning). */
+function formFromBriefing(b: Briefing): BriefingFormState {
+  return {
+    formation: b.formation ?? "",
+    lineup: b.lineup,
+    bench: b.bench,
+    offensive: b.offensive ?? "",
+    defensive: b.defensive ?? "",
+    note: b.note ?? "",
+  };
+}
+
+function BriefingManager({
+  supabase,
+  teams,
+  players,
+  matches,
+  initialBriefings,
+}: {
+  supabase: ReturnType<typeof createClient>;
+  teams: Team[];
+  players: Player[];
+  matches: Match[];
+  initialBriefings: Briefing[];
+}) {
+  const [briefings, setBriefings] = useState<Briefing[]>(initialBriefings);
+  const [teamId, setTeamId] = useState<string>(teams[0]?.id ?? "");
+  // "" = lagets mall, annars ett match-id
+  const [matchId, setMatchId] = useState<string>("");
+  const [form, setForm] = useState<BriefingFormState>(EMPTY_BRIEFING_FORM);
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const team = teams.find((t) => t.id === teamId) ?? null;
+
+  // Spelarna i valt lag — väljs in i uppställningen
+  const squad = useMemo(
+    () => players.filter((p) => p.team_id === teamId),
+    [players, teamId]
+  );
+
+  // Lagets matcher (matchnamn matchar Cupmates exakt)
+  const teamMatches = useMemo(
+    () =>
+      team
+        ? matches.filter(
+            (m) => m.home_team === team.name || m.away_team === team.name
+          )
+        : [],
+    [matches, team]
+  );
+
+  // Hämtar om genomgångarna och returnerar den uppdaterade listan
+  const loadBriefings = useCallback(async (): Promise<Briefing[]> => {
+    const { data } = await supabase.from("match_briefings").select("*");
+    const parsed = data ? data.map(parseBriefing) : [];
+    setBriefings(parsed);
+    return parsed;
+  }, [supabase]);
+
+  // Den sparade raden för valt lag+mål (om någon finns) — styr Ta bort-knappen
+  const currentRow = useMemo(
+    () =>
+      briefings.find(
+        (b) => b.team_id === teamId && (b.match_id ?? "") === matchId
+      ) ?? null,
+    [briefings, teamId, matchId]
+  );
+
+  // Återställ formuläret till den sparade raden (eller tomt) — anropas vid val av lag/mål
+  function resetFormForSelection(
+    newTeamId: string,
+    newMatchId: string,
+    source: Briefing[]
+  ) {
+    const row = source.find(
+      (b) => b.team_id === newTeamId && (b.match_id ?? "") === newMatchId
+    );
+    setForm(row ? formFromBriefing(row) : EMPTY_BRIEFING_FORM);
+    setMessage(null);
+  }
+
+  // Spelare som inte är placerade på planen → kan väljas in
+  const placedIds = new Set(form.lineup.map((s) => s.player_id));
+  const available = squad.filter((p) => !placedIds.has(p.id));
+
+  function addToPitch(playerId: string) {
+    // Placeras mitt på planen; ledaren drar sedan dit hon vill
+    setForm((f) => ({
+      ...f,
+      lineup: [...f.lineup, { player_id: playerId, x: 0.5, y: 0.5 }],
+      bench: f.bench.filter((id) => id !== playerId),
+    }));
+  }
+
+  function moveOnPitch(playerId: string, x: number, y: number) {
+    setForm((f) => ({
+      ...f,
+      lineup: f.lineup.map((s) =>
+        s.player_id === playerId ? { ...s, x, y } : s
+      ),
+    }));
+  }
+
+  function removeFromPitch(playerId: string) {
+    setForm((f) => ({
+      ...f,
+      lineup: f.lineup.filter((s) => s.player_id !== playerId),
+    }));
+  }
+
+  function toggleBench(playerId: string) {
+    setForm((f) => ({
+      ...f,
+      bench: f.bench.includes(playerId)
+        ? f.bench.filter((id) => id !== playerId)
+        : [...f.bench, playerId],
+    }));
+  }
+
+  // Förifyll från en annan av lagets genomgångar (mall eller match)
+  function prefillFrom(sourceMatchId: string) {
+    const source = briefings.find(
+      (b) => b.team_id === teamId && (b.match_id ?? "") === sourceMatchId
+    );
+    if (source) {
+      setForm(formFromBriefing(source));
+      setMessage("Förifyllt — kom ihåg att spara.");
+    }
+  }
+
+  async function handleSave() {
+    setBusy(true);
+    setMessage(null);
+
+    const payload = {
+      team_id: teamId,
+      match_id: matchId || null,
+      formation: form.formation.trim() || null,
+      lineup: form.lineup as unknown as Tables<"match_briefings">["lineup"],
+      bench: form.bench as unknown as Tables<"match_briefings">["bench"],
+      offensive: form.offensive.trim() || null,
+      defensive: form.defensive.trim() || null,
+      note: form.note.trim() || null,
+    };
+    // updated_at sätts av databastriggern set_updated_at — inte här.
+
+    // Finns redan en rad för lag+mål → uppdatera, annars infoga
+    const existing = briefings.find(
+      (b) => b.team_id === teamId && (b.match_id ?? "") === matchId
+    );
+
+    const { error } = existing
+      ? await supabase
+          .from("match_briefings")
+          .update(payload)
+          .eq("id", existing.id)
+      : await supabase.from("match_briefings").insert(payload);
+
+    if (error) {
+      setMessage(`Kunde inte spara: ${error.message}`);
+    } else {
+      setMessage("Genomgången är sparad.");
+      const fresh = await loadBriefings();
+      resetFormForSelection(teamId, matchId, fresh);
+    }
+    setBusy(false);
+  }
+
+  async function handleDelete() {
+    const existing = briefings.find(
+      (b) => b.team_id === teamId && (b.match_id ?? "") === matchId
+    );
+    if (!existing) return;
+    if (!window.confirm("Ta bort den här genomgången?")) return;
+    const { error } = await supabase
+      .from("match_briefings")
+      .delete()
+      .eq("id", existing.id);
+    if (error) {
+      setMessage(`Kunde inte ta bort: ${error.message}`);
+      return;
+    }
+    setForm(EMPTY_BRIEFING_FORM);
+    setMessage(null);
+    await loadBriefings();
+  }
+
+  if (teams.length === 0) return null;
+
+  // Källor att förifylla från (lagets mall + matcher som har en genomgång),
+  // exklusive det mål som redigeras just nu
+  const prefillSources = briefings
+    .filter((b) => b.team_id === teamId && (b.match_id ?? "") !== matchId)
+    .map((b) => ({
+      value: b.match_id ?? "",
+      label:
+        b.match_id === null
+          ? "Lagets mall"
+          : (() => {
+              const m = matches.find((mm) => mm.id === b.match_id);
+              return m ? `${m.home_team} – ${m.away_team}` : "Match";
+            })(),
+    }));
+
+  return (
+    <section className="mt-10">
+      <h2 className="mb-3 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] font-bold text-base uppercase text-paper">
+        Matchgenomgång
+      </h2>
+
+      <div className="rounded-xl bg-white p-5 shadow-card">
+        <div className="mb-4 grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className="mb-1 block text-sm font-bold">Lag</span>
+            <select
+              value={teamId}
+              onChange={(e) => {
+                const newTeamId = e.target.value;
+                setTeamId(newTeamId);
+                setMatchId("");
+                resetFormForSelection(newTeamId, "", briefings);
+              }}
+              className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
+            >
+              {teams.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-sm font-bold">Gäller</span>
+            <select
+              value={matchId}
+              onChange={(e) => {
+                const newMatchId = e.target.value;
+                setMatchId(newMatchId);
+                resetFormForSelection(teamId, newMatchId, briefings);
+              }}
+              className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
+            >
+              <option value="">Lagets mall</option>
+              {teamMatches.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.home_team} – {m.away_team}
+                  {m.starts_at
+                    ? ` (${briefingTimeFormat.format(new Date(m.starts_at))})`
+                    : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {prefillSources.length > 0 && (
+          <label className="mb-4 block">
+            <span className="mb-1 block text-sm font-bold">
+              Förifyll från{" "}
+              <span className="font-normal text-ink/60">(kopierar, sparar inte)</span>
+            </span>
+            <select
+              value=""
+              onChange={(e) => {
+                if (e.target.value !== "__none__") prefillFrom(e.target.value);
+              }}
+              className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
+            >
+              <option value="__none__">Välj källa…</option>
+              {prefillSources.map((s) => (
+                <option key={s.value || "mall"} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        <label className="mb-4 block">
+          <span className="mb-1 block text-sm font-bold">
+            Formation{" "}
+            <span className="font-normal text-ink/60">(valfri, t.ex. 1-3-2-3)</span>
+          </span>
+          <input
+            type="text"
+            value={form.formation}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, formation: e.target.value }))
+            }
+            className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
+          />
+        </label>
+
+        {/* Planeditor */}
+        <p className="mb-1 text-sm font-bold">Uppställning (dra spelarna på plats)</p>
+        <div className="mb-3">
+          <MatchPitch
+            lineup={form.lineup}
+            players={squad}
+            onMove={moveOnPitch}
+            onRemove={removeFromPitch}
+          />
+        </div>
+
+        {/* Tillgängliga spelare att placera på planen */}
+        <p className="mb-1 text-sm font-bold">Lägg till på planen</p>
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          {available.length === 0 ? (
+            <span className="text-sm text-ink/60">Alla i truppen är placerade.</span>
+          ) : (
+            available.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => addToPitch(p.id)}
+                className="rounded-full border border-ink/25 bg-paper px-2.5 py-1 text-sm font-semibold transition-transform active:scale-95"
+              >
+                {p.number != null && (
+                  <span className="mr-1 text-ink/60">{p.number}</span>
+                )}
+                {p.name}
+              </button>
+            ))
+          )}
+        </div>
+
+        {/* Avbytare */}
+        <p className="mb-1 text-sm font-bold">
+          Avbytare{" "}
+          <span className="font-normal text-ink/60">(markera vilka som är med)</span>
+        </p>
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          {available.length === 0 ? (
+            <span className="text-sm text-ink/60">
+              Placera färre på planen för att välja avbytare.
+            </span>
+          ) : (
+            available.map((p) => {
+              const on = form.bench.includes(p.id);
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => toggleBench(p.id)}
+                  aria-pressed={on}
+                  className={`rounded-full border px-2.5 py-1 text-sm font-semibold transition-transform active:scale-95 ${
+                    on
+                      ? "border-transparent bg-grass text-ink"
+                      : "border-ink/25 bg-paper"
+                  }`}
+                >
+                  {p.name}
+                </button>
+              );
+            })
+          )}
+        </div>
+
+        <label className="mb-3 block">
+          <span className="mb-1 block text-sm font-bold">
+            Offensivt <span className="font-normal text-ink/60">(en punkt per rad)</span>
+          </span>
+          <textarea
+            rows={3}
+            value={form.offensive}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, offensive: e.target.value }))
+            }
+            className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
+          />
+        </label>
+
+        <label className="mb-3 block">
+          <span className="mb-1 block text-sm font-bold">
+            Defensivt <span className="font-normal text-ink/60">(en punkt per rad)</span>
+          </span>
+          <textarea
+            rows={3}
+            value={form.defensive}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, defensive: e.target.value }))
+            }
+            className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
+          />
+        </label>
+
+        <label className="mb-4 block">
+          <span className="mb-1 block text-sm font-bold">
+            Anteckning <span className="font-normal text-ink/60">(valfri)</span>
+          </span>
+          <input
+            type="text"
+            value={form.note}
+            onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
+            className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
+          />
+        </label>
+
+        {message && (
+          <p className="mb-3 rounded-lg bg-sun px-3 py-2 text-sm font-bold">
+            {message}
+          </p>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={busy}
+            className="flex-1 rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] font-bold text-base uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
+          >
+            {busy ? "Sparar…" : "Spara genomgång"}
+          </button>
+          {currentRow && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="rounded-xl border border-falu/40 bg-paper px-4 py-2.5 font-bold text-falu transition-transform active:scale-95"
+            >
+              Ta bort
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
