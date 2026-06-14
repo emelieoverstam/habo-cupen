@@ -141,6 +141,53 @@ body {
   }
 }
 
+/* Reveal av trupperna: wobble på kortet som står på tur och
+   guldspotlight på kortet som vänds */
+@keyframes card-wobble {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-2.5deg) scale(1.03);
+  }
+  75% {
+    transform: rotate(2.5deg) scale(1.03);
+  }
+}
+
+.card-wobble {
+  animation: card-wobble 0.5s ease-in-out infinite;
+}
+
+/* Under revealen snurrar kortet 1,5 varv innan framsidan landar */
+@keyframes card-spin-reveal {
+  from {
+    transform: rotateY(180deg);
+  }
+  to {
+    transform: rotateY(720deg);
+  }
+}
+
+.card-spin {
+  animation: card-spin-reveal 1.8s cubic-bezier(0.2, 0.6, 0.3, 1) both;
+}
+
+.card-spotlight .card-inner {
+  box-shadow:
+    0 0 0 3px var(--sun),
+    0 0 34px rgb(247 196 51 / 0.5);
+  border-radius: 0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-wobble,
+  .card-spin {
+    animation: none;
+  }
+}
+
 /* Konfettiregn när hela packlistan är ibockad */
 @keyframes confetti-fall {
   0% {

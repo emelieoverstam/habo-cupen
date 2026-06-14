@@ -97,7 +97,7 @@ function toggleItem(index: number) {
   listeners.forEach((l) => l());
 }
 
-type ConfettiPiece = {
+export type ConfettiPiece = {
   left: number;
   delay: number;
   duration: number;
@@ -106,8 +106,9 @@ type ConfettiPiece = {
   color: string;
 };
 
-/* Slumpas fram i klickhanteraren när sista saken bockas i */
-function makeConfetti(): ConfettiPiece[] {
+/* Slumpas fram i en händelsehanterare (aldrig under rendering).
+   Delas med trupp-revealen. */
+export function makeConfetti(): ConfettiPiece[] {
   return Array.from({ length: 120 }, (_, i) => ({
     left: Math.random() * 100,
     delay: Math.random() * 1.8,
@@ -119,7 +120,7 @@ function makeConfetti(): ConfettiPiece[] {
 }
 
 /* Fullskärms konfettiregn */
-function Confetti({ pieces }: { pieces: ConfettiPiece[] }) {
+export function Confetti({ pieces }: { pieces: ConfettiPiece[] }) {
   return (
     <div
       aria-hidden

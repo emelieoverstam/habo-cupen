@@ -3,13 +3,19 @@
 // och kan köras igen via knappen.
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import {
+  Confetti,
+  makeConfetti,
+  type ConfettiPiece,
+} from "@/components/PackingList";
 import type { Tables } from "@/types/database";
 
 type Team = Tables<"teams">;
 type Player = Tables<"players">;
 
 const REVEAL_KEY = "habocupen-trupp-reveal";
-const REVEAL_STEP_MS = 550;
+const REVEAL_STEP_MS = 2100;
+const REVEAL_INTRO_MS = 2200;
 
 /* Autografen får en lätt individuell lutning (stabil utifrån spelarens
    id). Långa namn blir mindre så att de inte klipps. */
@@ -42,9 +48,13 @@ export default function SquadSection({
     0
   );
 
-  // null = ingen reveal igång; annars hur många kort som vänts upp
-  const [revealStage, setRevealStage] = useState<number | null>(null);
+  // idle = ingen reveal; intro = arenaintrot; playing = korten vänds
+  const [phase, setPhase] = useState<"idle" | "intro" | "playing">("idle");
+  // Hur många kort som vänts upp under uppspelningen
+  const [revealStage, setRevealStage] = useState(0);
+  const [confetti, setConfetti] = useState<ConfettiPiece[] | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function startReveal() {
     if (totalPlayers === 0) return;
@@ -58,26 +68,47 @@ export default function SquadSection({
     }
 
     if (intervalRef.current) clearInterval(intervalRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    // Arenaintro i helskärm innan korten börjar vändas
+    setPhase("intro");
     setRevealStage(0);
-    let stage = 0;
-    intervalRef.current = setInterval(() => {
-      stage += 1;
-      setRevealStage(stage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
 
-      // Följ med i uppspelningen: scrolla kortet som vänds till mitten
-      const card = document.querySelector(`[data-card-index="${stage - 1}"]`);
-      card?.scrollIntoView({ behavior: "smooth", block: "center" });
+    timeoutRef.current = setTimeout(() => {
+      setPhase("playing");
 
-      if (stage > totalPlayers) {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        setRevealStage(null);
-        try {
-          localStorage.setItem(REVEAL_KEY, "1");
-        } catch {
-          // privat läge — då spelas revealen helt enkelt vid varje besök
+      // Vänd ett kort: scrolla fram det och räkna upp stage
+      const flip = (stage: number) => {
+        setRevealStage(stage);
+        const card = document.querySelector(
+          `[data-card-index="${stage - 1}"]`
+        );
+        card?.scrollIntoView({ behavior: "smooth", block: "center" });
+      };
+
+      // Första kortet vänds direkt så introt övergår sömlöst i showen
+      let stage = 1;
+      flip(stage);
+
+      intervalRef.current = setInterval(() => {
+        stage += 1;
+        if (stage > totalPlayers) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          setPhase("idle");
+          // Final: konfettiregn över hela truppen
+          setConfetti(makeConfetti());
+          timeoutRef.current = setTimeout(() => setConfetti(null), 5500);
+          try {
+            localStorage.setItem(REVEAL_KEY, "1");
+          } catch {
+            // privat läge — då spelas revealen helt enkelt vid varje besök
+          }
+          return;
         }
-      }
-    }, REVEAL_STEP_MS);
+        flip(stage);
+      }, REVEAL_STEP_MS);
+    }, REVEAL_INTRO_MS);
   }
 
   // Spela upp automatiskt vid första besöket
@@ -96,10 +127,11 @@ export default function SquadSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Städa intervallet om sidan lämnas mitt i revealen
+  // Städa timers om sidan lämnas mitt i revealen
   useEffect(
     () => () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     },
     []
   );
@@ -112,11 +144,40 @@ export default function SquadSection({
     );
   }
 
-  const revealActive = revealStage !== null;
+  const revealActive = phase !== "idle";
   let globalIndex = 0;
 
   return (
     <>
+      {confetti && <Confetti pieces={confetti} />}
+
+      {/* Arenaintro innan korten vänds */}
+      {phase === "intro" && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-pine text-center">
+          <p
+            className="rise text-xs font-bold uppercase tracking-[0.35em] text-paper/70"
+            style={{ animationDelay: "150ms" }}
+          >
+            Habo-cupen 2026
+          </p>
+          <p
+            className="rise font-[family-name:var(--font-display)] font-bold text-4xl uppercase text-sun"
+            style={{ animationDelay: "450ms" }}
+          >
+            Laguppställningen
+          </p>
+          <p
+            className="rise font-[family-name:var(--font-display)] font-bold text-2xl uppercase text-paper"
+            style={{ animationDelay: "850ms" }}
+          >
+            BK Zeros
+          </p>
+          <p className="rise text-3xl" style={{ animationDelay: "1200ms" }}>
+            🥁
+          </p>
+        </div>
+      )}
+
       <div className="mb-4 text-center">
         <button
           type="button"
@@ -143,11 +204,20 @@ export default function SquadSection({
             <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               {squad.map((player, index) => {
                 const cardIndex = globalIndex++;
+                const shown = phase === "playing" && revealStage > cardIndex;
+                const isCurrent =
+                  phase === "playing" && revealStage - 1 === cardIndex;
+                const isUpNext =
+                  phase === "playing" && revealStage === cardIndex;
                 return (
                   <li
                     key={player.id}
                     data-card-index={cardIndex}
-                    className="rise"
+                    className={`rise transition-all duration-300 ${
+                      isCurrent ? "card-spotlight z-10 scale-105" : ""
+                    } ${isUpNext ? "card-wobble" : ""} ${
+                      revealActive && !shown && !isCurrent ? "opacity-50" : ""
+                    }`}
                     style={{ animationDelay: `${index * 30}ms` }}
                   >
                     <PlayerCard
@@ -155,9 +225,7 @@ export default function SquadSection({
                       teamLabel={team.name.replace("BK Zeros ", "")}
                       tilt={index % 2 === 0 ? "card-tilt-l" : "card-tilt-r"}
                       revealActive={revealActive}
-                      revealShown={
-                        revealStage !== null && revealStage > cardIndex
-                      }
+                      revealShown={shown}
                     />
                   </li>
                 );
@@ -201,7 +269,11 @@ function PlayerCard({
       aria-label={`Vänd spelarkortet för ${player.name}`}
       className={`card-3d block w-full cursor-pointer text-left ${tilt}`}
     >
-      <div className={`card-inner relative ${flipped ? "is-flipped" : ""}`}>
+      <div
+        className={`card-inner relative ${flipped ? "is-flipped" : ""} ${
+          revealActive && revealShown ? "card-spin" : ""
+        }`}
+      >
         {/* Framsida */}
         <div className="card-face rounded-xl bg-paper p-1.5 shadow-card">
           <div className="rounded-lg border border-sun p-1">
