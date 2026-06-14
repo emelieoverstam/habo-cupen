@@ -63,6 +63,17 @@ function itemKey(item: TimelineItem) {
   return item.kind === "event" ? item.event.id : item.match.id;
 }
 
+type Tip = { emoji: string; text: string };
+
+type Upcoming = {
+  time: string;
+  day: string;
+  label: string;
+  emoji: string;
+  dayLabel: string;
+  isToday: boolean;
+};
+
 export default function ScheduleView({
   initialTeams,
   initialEvents,
@@ -166,6 +177,64 @@ export default function ScheduleView({
   const visiblePast = showEarlier ? pastItems : pastItems.slice(-2);
   const hiddenCount = pastItems.length - visiblePast.length;
 
+  // Tidsstyrt tips högst upp — ändras efter läget just nu
+  const currentTip = useMemo<Tip | null>(() => {
+    if (!now) return null;
+    const nowMs = now.getTime();
+
+    // Match avslutad inom 30 min → återhämtning
+    const justEnded = matches.some((m) => {
+      if (!m.starts_at) return false;
+      const end = new Date(m.starts_at).getTime() + 45 * 60_000;
+      return end <= nowMs && nowMs - end <= 30 * 60_000;
+    });
+    if (justEnded) {
+      return {
+        emoji: "🍎",
+        text: "Stoppa snabbt i dig något att äta och fyll vattenflaskan.",
+      };
+    }
+
+    // Nästa kommande punkt (match eller event)
+    const ups: { ms: number; kind: "match" | "event"; etype?: CupEvent["type"] }[] = [];
+    for (const e of events) {
+      if (e.starts_at && e.status !== "cancelled") {
+        ups.push({ ms: new Date(e.starts_at).getTime(), kind: "event", etype: e.type });
+      }
+    }
+    for (const m of matches) {
+      if (m.starts_at) ups.push({ ms: new Date(m.starts_at).getTime(), kind: "match" });
+    }
+    const next = ups
+      .filter((u) => u.ms > nowMs)
+      .sort((a, b) => a.ms - b.ms)[0];
+    if (!next) return null;
+    const minsTo = (next.ms - nowMs) / 60_000;
+
+    // Snart match → förberedelse
+    if (next.kind === "match" && minsTo <= 70) {
+      return {
+        emoji: "💧",
+        text: "Snart match – fyll vattenflaskan och kolla benskydd, skor och matchtröja.",
+      };
+    }
+    // Snart läggdags → kvällsrutin
+    if (next.kind === "event" && next.etype === "somn" && minsTo <= 60) {
+      return {
+        emoji: "🪥",
+        text: "Snart läggdags – borsta tänderna, ladda mobilen och plocka fram morgondagens grejer.",
+      };
+    }
+    // Allmän påminnelse mitt på en cupdag
+    if (isToday && now.getHours() >= 9 && now.getHours() < 20) {
+      return {
+        emoji: "💧",
+        text: "Drick vatten ofta – det är lätt att glömma en cupdag!",
+      };
+    }
+    return null;
+  }, [now, events, matches, isToday]);
+
   // Nästa kommande punkt i dag — markeras med "Härnäst"
   const nextItemKey = useMemo(() => {
     if (!now || activeDay !== today) return null;
@@ -180,15 +249,7 @@ export default function ScheduleView({
   // Nästa händelse över alla dagar — för den tydliga nedräkningen högst upp
   const nextUpcoming = useMemo(() => {
     if (!now) return null;
-    type Up = {
-      time: string;
-      day: string;
-      label: string;
-      emoji: string;
-      dayLabel: string;
-      isToday: boolean;
-    };
-    const upcoming: Up[] = [];
+    const upcoming: Upcoming[] = [];
     for (const e of events) {
       if (e.starts_at && e.status !== "cancelled") {
         upcoming.push({
@@ -216,6 +277,27 @@ export default function ScheduleView({
     upcoming.sort((a, b) => (a.time < b.time ? -1 : 1));
     return upcoming.find((u) => new Date(u.time) > now) ?? null;
   }, [events, matches, now, today]);
+
+  const renderItem = (item: TimelineItem, index: number, dimmed: boolean) =>
+    item.kind === "event" ? (
+      <EventCard
+        key={item.event.id}
+        event={item.event}
+        team={item.event.team_id ? teamById.get(item.event.team_id) : undefined}
+        isNext={itemKey(item) === nextItemKey}
+        delayMs={index * 40}
+        dimmed={dimmed}
+      />
+    ) : (
+      <MatchCard
+        key={item.match.id}
+        match={item.match}
+        team={matchTeam(item.match)}
+        isNext={itemKey(item) === nextItemKey}
+        delayMs={index * 40}
+        dimmed={dimmed}
+      />
+    );
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-16">
@@ -245,6 +327,16 @@ export default function ScheduleView({
             )}
           </span>
         </button>
+      )}
+
+      {/* Tidsstyrt matnyttigt tips */}
+      {currentTip && (
+        <div className="mb-5 flex items-center gap-2 rounded-xl bg-paper/10 px-4 py-2.5 text-sm font-medium text-paper/85">
+          <span className="text-base" aria-hidden>
+            {currentTip.emoji}
+          </span>
+          <span>{currentTip.text}</span>
+        </div>
       )}
 
       {/* Dagflikar */}
@@ -321,33 +413,12 @@ export default function ScheduleView({
             </li>
           )}
 
-          {[
-            ...visiblePast.map((item) => ({ item, dimmed: true })),
-            ...restItems.map((item) => ({ item, dimmed: false })),
-          ].map(({ item, dimmed }, index) =>
-            item.kind === "event" ? (
-              <EventCard
-                key={item.event.id}
-                event={item.event}
-                team={
-                  item.event.team_id
-                    ? teamById.get(item.event.team_id)
-                    : undefined
-                }
-                isNext={itemKey(item) === nextItemKey}
-                delayMs={index * 40}
-                dimmed={dimmed}
-              />
-            ) : (
-              <MatchCard
-                key={item.match.id}
-                match={item.match}
-                team={matchTeam(item.match)}
-                isNext={itemKey(item) === nextItemKey}
-                delayMs={index * 40}
-                dimmed={dimmed}
-              />
-            )
+          {/* Passerade punkter (nertonade) */}
+          {visiblePast.map((item, index) => renderItem(item, index, true))}
+
+          {/* Kommande punkter */}
+          {restItems.map((item, index) =>
+            renderItem(item, visiblePast.length + index, false)
           )}
         </ol>
       )}
