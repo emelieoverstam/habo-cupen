@@ -8,6 +8,7 @@ import Link from "next/link";
 const TABS = [
   { href: "/", label: "Hem", key: "hem" },
   { href: "/schema", label: "Schema", key: "schema" },
+  { href: "/genomgang", label: "Genomgång", key: "genomgang" },
   { href: "/tabeller", label: "Tabeller", key: "tabeller" },
   { href: "/trupperna", label: "Trupperna", key: "trupperna" },
   { href: "/packlista", label: "Packlista", key: "packlista" },
