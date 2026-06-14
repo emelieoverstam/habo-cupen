@@ -31,6 +31,8 @@ function autographFor(id: string, name: string) {
     tilt: AUTOGRAPH_TILTS[hash % AUTOGRAPH_TILTS.length],
     // Ms Madi är bred — krymp tidigt så att namnen inte klipps
     size: name.length > 12 ? "text-xl" : "text-2xl",
+    // Baksidan har mer plats — där får namnet vara ett steg större
+    sizeBack: name.length > 12 ? "text-2xl" : "text-3xl",
   };
 }
 
@@ -329,7 +331,7 @@ function PlayerCard({
                   </p>
                 )}
                 <p
-                  className={`w-full truncate ${autograph.size} ${autograph.tilt} leading-tight text-sun`}
+                  className={`w-full truncate ${autograph.sizeBack} ${autograph.tilt} leading-tight text-sun`}
                   style={{ fontFamily: autograph.font }}
                 >
                   {player.name}
