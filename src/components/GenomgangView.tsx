@@ -7,9 +7,15 @@ import { useCallback, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useScheduleLive } from "@/lib/use-schedule-live";
 import { useCurrentMinute } from "@/lib/time";
-import { type Briefing, parseBriefing, pickBriefing } from "@/lib/briefing";
+import {
+  type Briefing,
+  parseBriefing,
+  pickBriefing,
+  briefingHasContent,
+} from "@/lib/briefing";
 import SiteHeader from "@/components/SiteHeader";
 import MatchBriefing from "@/components/MatchBriefing";
+import BriefingGate from "@/components/BriefingGate";
 import type { Tables } from "@/types/database";
 
 type Team = Tables<"teams">;
@@ -119,7 +125,13 @@ export default function GenomgangView({
             {nextMatch.pitch && <> · Plan {nextMatch.pitch}</>}
           </p>
         )}
-        <MatchBriefing briefing={briefing} players={players} />
+        {briefingHasContent(briefing) ? (
+          <BriefingGate>
+            <MatchBriefing briefing={briefing} players={players} />
+          </BriefingGate>
+        ) : (
+          <MatchBriefing briefing={briefing} players={players} />
+        )}
       </div>
     </main>
   );

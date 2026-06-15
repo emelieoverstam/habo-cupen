@@ -43,15 +43,19 @@ export default function MatchBriefing({
       )}
 
       {briefing.lineup.length > 0 && (
-        <MatchPitch lineup={briefing.lineup} players={players} />
+        <MatchPitch
+          lineup={briefing.lineup}
+          players={players}
+          captainId={briefing.captain_id}
+        />
       )}
 
       {groups.length > 0 && (
         <div className="space-y-3">
           {groups.map((group) => (
-            <div key={group.role}>
+            <div key={group.position}>
               <p className="mb-1 text-xs font-bold uppercase tracking-[0.08em] text-ink/55">
-                {group.role}
+                {group.position}
               </p>
               <ul className="space-y-1">
                 {group.entries.map(({ player }) => (
@@ -63,6 +67,11 @@ export default function MatchBriefing({
                       {player.number ?? "–"}
                     </span>
                     <span className="text-sm font-semibold">{player.name}</span>
+                    {briefing.captain_id === player.id && (
+                      <span className="ml-auto rounded-full bg-pine px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sun">
+                        Kapten
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>

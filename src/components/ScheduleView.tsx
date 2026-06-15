@@ -14,6 +14,7 @@ import TeamMarker from "@/components/TeamMarker";
 import type { Tables } from "@/types/database";
 import { type Briefing, parseBriefing, pickBriefing, briefingHasContent } from "@/lib/briefing";
 import MatchBriefing from "@/components/MatchBriefing";
+import BriefingGate from "@/components/BriefingGate";
 
 type Team = Tables<"teams">;
 type CupEvent = Tables<"events">;
@@ -656,7 +657,9 @@ function MatchCard({
           </button>
           {open && (
             <div className="pb-4">
-              <MatchBriefing briefing={briefing} players={players} />
+              <BriefingGate>
+                <MatchBriefing briefing={briefing} players={players} />
+              </BriefingGate>
             </div>
           )}
         </div>

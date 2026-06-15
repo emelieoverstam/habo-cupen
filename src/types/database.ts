@@ -16,6 +16,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      captain_info: {
+        Row: {
+          id: string
+          responsibilities: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          responsibilities?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          responsibilities?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           created_at: string
@@ -72,6 +90,7 @@ export type Database = {
       match_briefings: {
         Row: {
           bench: Json
+          captain_id: string | null
           created_at: string
           defensive: string | null
           formation: string | null
@@ -80,11 +99,13 @@ export type Database = {
           match_id: string | null
           note: string | null
           offensive: string | null
+          published: boolean
           team_id: string
           updated_at: string
         }
         Insert: {
           bench?: Json
+          captain_id?: string | null
           created_at?: string
           defensive?: string | null
           formation?: string | null
@@ -93,11 +114,13 @@ export type Database = {
           match_id?: string | null
           note?: string | null
           offensive?: string | null
+          published?: boolean
           team_id: string
           updated_at?: string
         }
         Update: {
           bench?: Json
+          captain_id?: string | null
           created_at?: string
           defensive?: string | null
           formation?: string | null
@@ -106,10 +129,18 @@ export type Database = {
           match_id?: string | null
           note?: string | null
           offensive?: string | null
+          published?: boolean
           team_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "match_briefings_captain_id_fkey"
+            columns: ["captain_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "match_briefings_match_id_fkey"
             columns: ["match_id"]
@@ -181,6 +212,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_captain: boolean
           name: string
           number: number | null
           photo_url: string | null
@@ -189,6 +221,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_captain?: boolean
           name: string
           number?: number | null
           photo_url?: string | null
@@ -197,6 +230,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_captain?: boolean
           name?: string
           number?: number | null
           photo_url?: string | null

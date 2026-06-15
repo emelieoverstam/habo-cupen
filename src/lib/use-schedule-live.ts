@@ -9,6 +9,17 @@ import { createClient } from "@/lib/supabase/client";
 
 const SYNC_INTERVAL_MS = 3 * 60 * 1000;
 
+// Signal i samma flik: när ledar-chatten sparar en ändring uppdateras alla
+// öppna vyer direkt, utan att vänta in Realtime-broadcasten (som främst är
+// till för andra enheter och kan dröja).
+const SCHEDULE_CHANGED_EVENT = "f13:schedule-changed";
+
+export function notifyScheduleChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(SCHEDULE_CHANGED_EVENT));
+  }
+}
+
 export function useScheduleLive(refresh: () => void) {
   const supabase = useMemo(() => createClient(), []);
 
@@ -38,6 +49,13 @@ export function useScheduleLive(refresh: () => void) {
       supabase.removeChannel(channel);
     };
   }, [supabase, queueRefresh]);
+
+  // Lyssna på den lokala signalen från ledar-chatten (samma flik)
+  useEffect(() => {
+    const onLocalChange = () => queueRefresh();
+    window.addEventListener(SCHEDULE_CHANGED_EVENT, onLocalChange);
+    return () => window.removeEventListener(SCHEDULE_CHANGED_EVENT, onLocalChange);
+  }, [queueRefresh]);
 
   // Pinga synken: servern hämtar bara från Cupmate om datat är äldre än 2 min
   useEffect(() => {

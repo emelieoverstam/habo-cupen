@@ -6,9 +6,20 @@ import type { Tables } from "@/types/database";
 export type Player = Tables<"players">;
 type BriefingRow = Tables<"match_briefings">;
 
-// En placerad spelare på planen. x/y är 0–1 (andel av planens bredd/höjd),
-// där y=0 är längst upp (motståndarmål) och y=1 längst ner (eget mål).
-export type LineupSlot = { player_id: string; x: number; y: number };
+// Positioner som ledaren tilldelar varje spelare, i ordning defensiv → offensiv.
+// (MV = målvakt, MB = mittback, YM = ytter, 6/8/10:a = mittfält, 9:a = anfall.)
+export const POSITIONS = ["MV", "MB", "YM", "6:a", "8:a", "10:a", "9:a"] as const;
+export type Position = (typeof POSITIONS)[number];
+
+// En placerad spelare på planen. x/y är 0–1 (andel av planens bredd/höjd) och
+// styr enbart var spelaren ritas — positionen väljs separat av ledaren.
+// Saknas position (äldre uppställningar) härleds den ur y-läget.
+export type LineupSlot = {
+  player_id: string;
+  x: number;
+  y: number;
+  position?: Position;
+};
 
 // Typad vy av en genomgång där jsonb-fälten är uttolkade.
 export type Briefing = Omit<BriefingRow, "lineup" | "bench"> & {
@@ -25,60 +36,59 @@ export function parseBriefing(row: BriefingRow): Briefing {
   };
 }
 
-/* Välj rätt genomgång för en match: matchens egen om den finns, annars lagets
-   mall (raden där match_id är null). Returnerar null om ingen finns. */
+/* Välj matchens egen, PUBLICERADE genomgång (det spelarna ser). Utkast och
+   matcher utan genomgång ger null. */
 export function pickBriefing(
   briefings: Briefing[],
   teamId: string,
   matchId: string | null
 ): Briefing | null {
-  if (matchId) {
-    const own = briefings.find(
-      (b) => b.team_id === teamId && b.match_id === matchId
-    );
-    if (own) return own;
-  }
+  if (!matchId) return null;
   return (
-    briefings.find((b) => b.team_id === teamId && b.match_id === null) ?? null
+    briefings.find(
+      (b) => b.team_id === teamId && b.match_id === matchId && b.published
+    ) ?? null
   );
 }
 
-// Y-banden som översätter en placering på planen till en listrubrik.
-export type LineRole = "Målvakt" | "Försvar" | "Mittfält" | "Anfall";
+export type LineupEntry = { slot: LineupSlot; player: Player };
 
-/* Härled listrubrik från spelarens y-läge på planen. */
-export function roleFromY(y: number): LineRole {
-  if (y > 0.72) return "Målvakt";
-  if (y > 0.48) return "Försvar";
-  if (y > 0.28) return "Mittfält";
-  return "Anfall";
+/* Reservposition för äldre uppställningar som saknar vald position — härleds
+   ur y-läget (defensiv längst ner, offensiv längst upp). */
+function fallbackPosition(y: number): Position {
+  if (y > 0.72) return "MV";
+  if (y > 0.5) return "MB";
+  if (y > 0.3) return "8:a";
+  return "9:a";
 }
 
-export const LINE_ORDER: LineRole[] = ["Målvakt", "Försvar", "Mittfält", "Anfall"];
+/* Spelarens position: den ledaren valt, annars härledd ur y-läget. */
+export function positionOf(slot: LineupSlot): Position {
+  return slot.position ?? fallbackPosition(slot.y);
+}
 
-export type LineupEntry = { slot: LineupSlot; player: Player };
-export type LineGroup = { role: LineRole; entries: LineupEntry[] };
+export type PositionGroup = { position: Position; entries: LineupEntry[] };
 
-/* Gruppera den placerade uppställningen per linje (utifrån y), i ordningen
-   målvakt → anfall. Slots vars spelare saknas i truppen hoppas över. Inom en
-   linje sorteras spelarna vänster→höger (x stigande). */
+/* Gruppera uppställningen per vald position, i ordningen MV → 9:a. Inom en
+   position sorteras spelarna vänster→höger (x stigande). Slots vars spelare
+   saknas i truppen hoppas över. */
 export function groupLineup(
   lineup: LineupSlot[],
   players: Player[]
-): LineGroup[] {
+): PositionGroup[] {
   const byId = new Map(players.map((p) => [p.id, p]));
-  const buckets = new Map<LineRole, LineupEntry[]>();
+  const buckets = new Map<Position, LineupEntry[]>();
   for (const slot of lineup) {
     const player = byId.get(slot.player_id);
     if (!player) continue;
-    const role = roleFromY(slot.y);
-    const list = buckets.get(role) ?? [];
+    const position = positionOf(slot);
+    const list = buckets.get(position) ?? [];
     list.push({ slot, player });
-    buckets.set(role, list);
+    buckets.set(position, list);
   }
-  return LINE_ORDER.flatMap((role) => {
-    const entries = (buckets.get(role) ?? []).sort((a, b) => a.slot.x - b.slot.x);
-    return entries.length ? [{ role, entries }] : [];
+  return POSITIONS.flatMap((position) => {
+    const entries = (buckets.get(position) ?? []).sort((a, b) => a.slot.x - b.slot.x);
+    return entries.length ? [{ position, entries }] : [];
   });
 }
 

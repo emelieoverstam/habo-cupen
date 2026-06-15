@@ -1359,8 +1359,8 @@ function BriefingManager({
       offensive: form.offensive.trim() || null,
       defensive: form.defensive.trim() || null,
       note: form.note.trim() || null,
-      updated_at: new Date().toISOString(),
     };
+    // updated_at sätts av databastriggern set_updated_at — inte här.
 
     // Finns redan en rad för lag+mål → uppdatera, annars infoga
     const existing = briefings.find(

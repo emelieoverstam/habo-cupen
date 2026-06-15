@@ -299,6 +299,14 @@ function PlayerCard({
                   {player.number}
                 </span>
               )}
+              {player.is_captain && (
+                <span
+                  className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-sun bg-pine font-[family-name:var(--font-display)] font-bold text-base text-sun shadow-chip"
+                  aria-label="Kapten"
+                >
+                  C
+                </span>
+              )}
               <span className="card-shine" aria-hidden />
             </div>
             <div className="px-1 pb-1 pt-1.5 text-center">

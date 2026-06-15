@@ -15,6 +15,7 @@ import type { Enums, Tables } from "@/types/database";
 import {
   type Briefing,
   type LineupSlot,
+  type Position,
   parseBriefing,
 } from "@/lib/briefing";
 import MatchPitch from "@/components/MatchPitch";
@@ -24,6 +25,16 @@ type Team = Tables<"teams">;
 type Player = Tables<"players">;
 type EventStatus = Enums<"event_status">;
 type Match = Tables<"matches">;
+type CaptainInfo = Tables<"captain_info">;
+
+// Flikar i admin så att hålltider, trupp och genomgång inte ligger på samma
+// långa sida
+type AdminTab = "events" | "players" | "briefings";
+const TABS: { id: AdminTab; label: string }[] = [
+  { id: "events", label: "Hålltider" },
+  { id: "players", label: "Trupperna" },
+  { id: "briefings", label: "Genomgång" },
+];
 
 const STATUS_LABELS: Record<EventStatus, string> = {
   confirmed: "Bekräftad",
@@ -89,16 +100,19 @@ export default function AdminPanel({
   initialPlayers,
   initialMatches,
   initialBriefings,
+  initialCaptainInfo,
 }: {
   initialEvents: CupEvent[];
   initialTeams: Team[];
   initialPlayers: Player[];
   initialMatches: Match[];
   initialBriefings: Briefing[];
+  initialCaptainInfo: CaptainInfo | null;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [tab, setTab] = useState<AdminTab>("events");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -127,24 +141,68 @@ export default function AdminPanel({
 
       {!authChecked ? null : user ? (
         <>
-          <EventManager
-            supabase={supabase}
-            userEmail={user.email ?? ""}
-            initialEvents={initialEvents}
-            initialTeams={initialTeams}
-          />
-          <PlayersManager
-            supabase={supabase}
-            teams={initialTeams}
-            initialPlayers={initialPlayers}
-          />
-          <BriefingManager
-            supabase={supabase}
-            teams={initialTeams}
-            players={initialPlayers}
-            matches={initialMatches}
-            initialBriefings={initialBriefings}
-          />
+          <div className="mb-5 flex items-center justify-between text-sm font-semibold text-paper/80">
+            <span>Inloggad som {user.email}</span>
+            <button
+              type="button"
+              onClick={() => supabase.auth.signOut()}
+              className="rounded-full border border-paper/30 bg-paper/10 px-3 py-1 font-bold text-paper transition-transform active:scale-95"
+            >
+              Logga ut
+            </button>
+          </div>
+
+          {/* Flikar för att växla mellan sektionerna */}
+          <nav aria-label="Välj sektion" className="mb-6 flex gap-2">
+            {TABS.map((t) => {
+              const active = t.id === tab;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTab(t.id)}
+                  aria-pressed={active}
+                  className={`flex-1 rounded-xl border px-3 py-2 font-[family-name:var(--font-display)] font-bold text-sm uppercase transition-transform active:scale-95 ${
+                    active
+                      ? "border-transparent bg-sun text-ink shadow-chip"
+                      : "border-paper/30 bg-paper/10 text-paper hover:bg-paper/20"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          {tab === "events" && (
+            <EventManager
+              supabase={supabase}
+              initialEvents={initialEvents}
+              initialTeams={initialTeams}
+            />
+          )}
+          {tab === "players" && (
+            <>
+              <PlayersManager
+                supabase={supabase}
+                teams={initialTeams}
+                initialPlayers={initialPlayers}
+              />
+              <CaptainInfoManager
+                supabase={supabase}
+                initial={initialCaptainInfo}
+              />
+            </>
+          )}
+          {tab === "briefings" && (
+            <BriefingManager
+              supabase={supabase}
+              teams={initialTeams}
+              players={initialPlayers}
+              matches={initialMatches}
+              initialBriefings={initialBriefings}
+            />
+          )}
         </>
       ) : (
         <LoginForm supabase={supabase} />
@@ -225,12 +283,10 @@ function LoginForm({
 
 function EventManager({
   supabase,
-  userEmail,
   initialEvents,
   initialTeams,
 }: {
   supabase: ReturnType<typeof createClient>;
-  userEmail: string;
   initialEvents: CupEvent[];
   initialTeams: Team[];
 }) {
@@ -313,17 +369,6 @@ function EventManager({
 
   return (
     <>
-      <div className="mb-5 flex items-center justify-between text-sm font-semibold text-paper/80">
-        <span>Inloggad som {userEmail}</span>
-        <button
-          type="button"
-          onClick={() => supabase.auth.signOut()}
-          className="rounded-full border border-paper/30 bg-paper/10 px-3 py-1 font-bold text-paper transition-transform active:scale-95"
-        >
-          Logga ut
-        </button>
-      </div>
-
       {/* Formulär för ny/ändrad hålltid */}
       <form
         onSubmit={handleSubmit}
@@ -535,6 +580,7 @@ type PlayerFormState = {
   teamId: string;
   name: string;
   number: string;
+  isCaptain: boolean;
 };
 
 /* Plocka ut lagringsvägen ur en publik storage-URL (för borttagning) */
@@ -559,6 +605,7 @@ function PlayersManager({
     teamId: "",
     name: "",
     number: "",
+    isCaptain: false,
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -577,7 +624,7 @@ function PlayersManager({
 
   function resetForm() {
     setEditingId(null);
-    setForm((f) => ({ teamId: f.teamId, name: "", number: "" }));
+    setForm((f) => ({ teamId: f.teamId, name: "", number: "", isCaptain: false }));
     setPhotoFile(null);
     setFileKey((k) => k + 1); // nollställer filväljaren
   }
@@ -588,6 +635,7 @@ function PlayersManager({
       teamId: player.team_id ?? "",
       name: player.name,
       number: player.number?.toString() ?? "",
+      isCaptain: player.is_captain,
     });
     setPhotoFile(null);
     setFileKey((k) => k + 1);
@@ -629,6 +677,7 @@ function PlayersManager({
         name: form.name.trim(),
         number: form.number ? Number(form.number) : null,
         photo_url: photoUrl,
+        is_captain: form.isCaptain,
       };
 
       const { error } = editingId
@@ -662,6 +711,11 @@ function PlayersManager({
     if (editingId === player.id) resetForm();
     await loadPlayers();
   }
+
+  // Andra kaptener i samma lag (exkl. den som redigeras) — för den mjuka varningen
+  const otherCaptains = players.filter(
+    (p) => p.team_id === form.teamId && p.is_captain && p.id !== editingId
+  ).length;
 
   return (
     <section className="mt-10">
@@ -735,6 +789,24 @@ function PlayersManager({
             className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2 text-sm"
           />
         </label>
+
+        <label className="mb-4 flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={form.isCaptain}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, isCaptain: e.target.checked }))
+            }
+            className="h-4 w-4"
+          />
+          <span className="text-sm font-bold">Kapten</span>
+        </label>
+        {form.isCaptain && form.teamId && otherCaptains >= 2 && (
+          <p className="mb-4 rounded-lg bg-sun/40 px-3 py-2 text-sm font-semibold">
+            Laget har redan två kaptener. Det går att spara fler, men tanken är
+            att de delar på rollen två och två.
+          </p>
+        )}
 
         {message && (
           <p className="mb-3 rounded-lg bg-sun px-3 py-2 text-sm font-bold">
@@ -843,6 +915,11 @@ function PlayerGroup({
                 )}
                 {player.name}
               </span>
+              {player.is_captain && (
+                <span className="shrink-0 rounded-full bg-pine px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sun">
+                  Kapten
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => onEdit(player)}
@@ -874,6 +951,7 @@ type BriefingFormState = {
   offensive: string;
   defensive: string;
   note: string;
+  captainId: string | null;
 };
 
 const EMPTY_BRIEFING_FORM: BriefingFormState = {
@@ -883,6 +961,7 @@ const EMPTY_BRIEFING_FORM: BriefingFormState = {
   offensive: "",
   defensive: "",
   note: "",
+  captainId: null,
 };
 
 const briefingTimeFormat = new Intl.DateTimeFormat("sv-SE", {
@@ -894,6 +973,15 @@ const briefingTimeFormat = new Intl.DateTimeFormat("sv-SE", {
   timeZone: "Europe/Stockholm",
 });
 
+/* Lagets första match i schemat (matchnamn matchar Cupmates exakt). */
+function firstMatchIdFor(team: Team | undefined, matches: Match[]): string {
+  if (!team) return "";
+  const m = matches.find(
+    (mm) => mm.home_team === team.name || mm.away_team === team.name
+  );
+  return m?.id ?? "";
+}
+
 /* Fyll formuläret från en befintlig genomgång (för redigering/förifyllning). */
 function formFromBriefing(b: Briefing): BriefingFormState {
   return {
@@ -903,6 +991,7 @@ function formFromBriefing(b: Briefing): BriefingFormState {
     offensive: b.offensive ?? "",
     defensive: b.defensive ?? "",
     note: b.note ?? "",
+    captainId: b.captain_id,
   };
 }
 
@@ -921,9 +1010,18 @@ function BriefingManager({
 }) {
   const [briefings, setBriefings] = useState<Briefing[]>(initialBriefings);
   const [teamId, setTeamId] = useState<string>(teams[0]?.id ?? "");
-  // "" = lagets mall, annars ett match-id
-  const [matchId, setMatchId] = useState<string>("");
-  const [form, setForm] = useState<BriefingFormState>(EMPTY_BRIEFING_FORM);
+  // Varje match har sin egen genomgång — matchId är alltid ett match-id
+  const [matchId, setMatchId] = useState<string>(() =>
+    firstMatchIdFor(teams[0], matches)
+  );
+  // Förfyll direkt med den sparade genomgången för förvald match (annars tomt)
+  const [form, setForm] = useState<BriefingFormState>(() => {
+    const firstMatch = firstMatchIdFor(teams[0], matches);
+    const row = initialBriefings.find(
+      (b) => b.team_id === (teams[0]?.id ?? "") && b.match_id === (firstMatch || null)
+    );
+    return row ? formFromBriefing(row) : EMPTY_BRIEFING_FORM;
+  });
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -980,6 +1078,12 @@ function BriefingManager({
   const placedIds = new Set(form.lineup.map((s) => s.player_id));
   const available = squad.filter((p) => !placedIds.has(p.id));
 
+  // Matchkaptenen väljs bland lagets utvalda kaptener som står på planen
+  const anyCaptainDesignated = squad.some((p) => p.is_captain);
+  const captainsOnPitch = squad.filter(
+    (p) => p.is_captain && placedIds.has(p.id)
+  );
+
   function addToPitch(playerId: string) {
     // Placeras mitt på planen; ledaren drar sedan dit hon vill
     setForm((f) => ({
@@ -1002,6 +1106,18 @@ function BriefingManager({
     setForm((f) => ({
       ...f,
       lineup: f.lineup.filter((s) => s.player_id !== playerId),
+      // Tas matchkaptenen bort från planen nollställs kaptensvalet
+      captainId: f.captainId === playerId ? null : f.captainId,
+    }));
+  }
+
+  // Ledaren väljer position själv per spelare (frikopplat från placeringen)
+  function setPosition(playerId: string, position: Position) {
+    setForm((f) => ({
+      ...f,
+      lineup: f.lineup.map((s) =>
+        s.player_id === playerId ? { ...s, position } : s
+      ),
     }));
   }
 
@@ -1025,26 +1141,34 @@ function BriefingManager({
     }
   }
 
-  async function handleSave() {
+  // setPublished: true = publicera, false = avpublicera, undefined = behåll läget
+  async function handleSave(setPublished?: boolean) {
+    if (!matchId) {
+      setMessage("Välj en match först.");
+      return;
+    }
     setBusy(true);
     setMessage(null);
 
+    // Finns redan en rad för lag+match → uppdatera, annars infoga
+    const existing = briefings.find(
+      (b) => b.team_id === teamId && (b.match_id ?? "") === matchId
+    );
+    const published = setPublished ?? existing?.published ?? false;
+
     const payload = {
       team_id: teamId,
-      match_id: matchId || null,
+      match_id: matchId,
       formation: form.formation.trim() || null,
       lineup: form.lineup as unknown as Tables<"match_briefings">["lineup"],
       bench: form.bench as unknown as Tables<"match_briefings">["bench"],
       offensive: form.offensive.trim() || null,
       defensive: form.defensive.trim() || null,
       note: form.note.trim() || null,
+      captain_id: form.captainId,
+      published,
     };
     // updated_at sätts av databastriggern set_updated_at — inte här.
-
-    // Finns redan en rad för lag+mål → uppdatera, annars infoga
-    const existing = briefings.find(
-      (b) => b.team_id === teamId && (b.match_id ?? "") === matchId
-    );
 
     const { error } = existing
       ? await supabase
@@ -1056,7 +1180,13 @@ function BriefingManager({
     if (error) {
       setMessage(`Kunde inte spara: ${error.message}`);
     } else {
-      setMessage("Genomgången är sparad.");
+      setMessage(
+        setPublished === true
+          ? "Genomgången är publicerad – nu syns den för spelarna."
+          : setPublished === false
+            ? "Genomgången är avpublicerad – sparad som utkast."
+            : "Genomgången är sparad."
+      );
       const fresh = await loadBriefings();
       resetFormForSelection(teamId, matchId, fresh);
     }
@@ -1084,20 +1214,25 @@ function BriefingManager({
 
   if (teams.length === 0) return null;
 
+  // Finns en sparad genomgång för ett visst lag+mål? (för ✓ i listorna)
+  const hasBriefing = (tId: string, mId: string) =>
+    briefings.some((b) => b.team_id === tId && (b.match_id ?? "") === mId);
+  const teamHasAnyBriefing = (tId: string) =>
+    briefings.some((b) => b.team_id === tId);
+
   // Källor att förifylla från (lagets mall + matcher som har en genomgång),
   // exklusive det mål som redigeras just nu
   const prefillSources = briefings
-    .filter((b) => b.team_id === teamId && (b.match_id ?? "") !== matchId)
-    .map((b) => ({
-      value: b.match_id ?? "",
-      label:
-        b.match_id === null
-          ? "Lagets mall"
-          : (() => {
-              const m = matches.find((mm) => mm.id === b.match_id);
-              return m ? `${m.home_team} – ${m.away_team}` : "Match";
-            })(),
-    }));
+    .filter(
+      (b) => b.team_id === teamId && b.match_id !== null && b.match_id !== matchId
+    )
+    .map((b) => {
+      const m = matches.find((mm) => mm.id === b.match_id);
+      return {
+        value: b.match_id as string,
+        label: m ? `${m.home_team} – ${m.away_team}` : "Match",
+      };
+    });
 
   return (
     <section className="mt-10">
@@ -1113,21 +1248,24 @@ function BriefingManager({
               value={teamId}
               onChange={(e) => {
                 const newTeamId = e.target.value;
+                const newTeam = teams.find((t) => t.id === newTeamId);
+                const newMatchId = firstMatchIdFor(newTeam, matches);
                 setTeamId(newTeamId);
-                setMatchId("");
-                resetFormForSelection(newTeamId, "", briefings);
+                setMatchId(newMatchId);
+                resetFormForSelection(newTeamId, newMatchId, briefings);
               }}
               className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
             >
               {teams.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
+                  {teamHasAnyBriefing(t.id) ? " ✓" : ""}
                 </option>
               ))}
             </select>
           </label>
           <label className="block">
-            <span className="mb-1 block text-sm font-bold">Gäller</span>
+            <span className="mb-1 block text-sm font-bold">Match</span>
             <select
               value={matchId}
               onChange={(e) => {
@@ -1135,19 +1273,48 @@ function BriefingManager({
                 setMatchId(newMatchId);
                 resetFormForSelection(teamId, newMatchId, briefings);
               }}
-              className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
+              disabled={teamMatches.length === 0}
+              className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2 disabled:opacity-60"
             >
-              <option value="">Lagets mall</option>
+              {teamMatches.length === 0 && (
+                <option value="">Inga matcher i schemat</option>
+              )}
               {teamMatches.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.home_team} – {m.away_team}
                   {m.starts_at
                     ? ` (${briefingTimeFormat.format(new Date(m.starts_at))})`
                     : ""}
+                  {hasBriefing(teamId, m.id) ? " ✓" : ""}
                 </option>
               ))}
             </select>
           </label>
+        </div>
+
+        <p className="-mt-2 mb-3 text-xs text-ink/55">
+          ✓ = matchen har redan en sparad genomgång. Välj match för att ändra i den.
+        </p>
+
+        <div className="mb-4 flex items-center gap-2 text-xs">
+          <span className="font-bold uppercase tracking-wide text-ink/55">
+            Status:
+          </span>
+          <span
+            className={`rounded-full px-2 py-0.5 font-bold ${
+              !currentRow
+                ? "bg-ink/10 text-ink/70"
+                : currentRow.published
+                  ? "bg-grass text-ink"
+                  : "bg-sun text-ink"
+            }`}
+          >
+            {!currentRow
+              ? "Ny – inte sparad"
+              : currentRow.published
+                ? "Publicerad (syns för spelarna)"
+                : "Utkast (dold för spelarna)"}
+          </span>
         </div>
 
         {prefillSources.length > 0 && (
@@ -1196,6 +1363,8 @@ function BriefingManager({
             players={squad}
             onMove={moveOnPitch}
             onRemove={removeFromPitch}
+            onSetPosition={setPosition}
+            captainId={form.captainId}
           />
         </div>
 
@@ -1253,6 +1422,41 @@ function BriefingManager({
           )}
         </div>
 
+        {/* Matchkapten — bär bindeln den här matchen, visas som C på planen */}
+        <label className="mb-4 block">
+          <span className="mb-1 block text-sm font-bold">
+            Matchkapten{" "}
+            <span className="font-normal text-ink/60">(visas som C på planen)</span>
+          </span>
+          {!anyCaptainDesignated ? (
+            <p className="text-sm text-ink/60">
+              Inga kaptener utvalda än — markera kaptener under Trupperna.
+            </p>
+          ) : (
+            <>
+              <select
+                value={form.captainId ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, captainId: e.target.value || null }))
+                }
+                className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
+              >
+                <option value="">Ingen</option>
+                {captainsOnPitch.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              {captainsOnPitch.length === 0 && (
+                <p className="mt-1 text-xs text-ink/55">
+                  Placera en av lagets kaptener på planen för att välja matchkapten.
+                </p>
+              )}
+            </>
+          )}
+        </label>
+
         <label className="mb-3 block">
           <span className="mb-1 block text-sm font-bold">
             Offensivt <span className="font-normal text-ink/60">(en punkt per rad)</span>
@@ -1299,25 +1503,124 @@ function BriefingManager({
           </p>
         )}
 
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={busy}
-            className="flex-1 rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] font-bold text-base uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
-          >
-            {busy ? "Sparar…" : "Spara genomgång"}
-          </button>
+        <div className="space-y-2">
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => handleSave()}
+              disabled={busy || !matchId}
+              className="flex-1 rounded-xl border border-ink/25 bg-paper px-4 py-2.5 font-[family-name:var(--font-display)] font-bold text-base uppercase transition-transform active:scale-95 disabled:opacity-50"
+            >
+              {busy ? "Sparar…" : "Spara"}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSave(!currentRow?.published)}
+              disabled={busy || !matchId}
+              className={`flex-1 rounded-xl px-4 py-2.5 font-[family-name:var(--font-display)] font-bold text-base uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50 ${
+                currentRow?.published
+                  ? "border border-ink/25 bg-paper"
+                  : "bg-grass"
+              }`}
+            >
+              {currentRow?.published ? "Avpublicera" : "Publicera"}
+            </button>
+          </div>
           {currentRow && (
             <button
               type="button"
               onClick={handleDelete}
-              className="rounded-xl border border-falu/40 bg-paper px-4 py-2.5 font-bold text-falu transition-transform active:scale-95"
+              className="w-full rounded-xl border border-falu/40 bg-paper px-4 py-2 font-bold text-falu transition-transform active:scale-95"
             >
-              Ta bort
+              Ta bort genomgång
             </button>
           )}
         </div>
+      </div>
+    </section>
+  );
+}
+
+// ---- Kaptensansvar -----------------------------------------------------
+
+/* Redigerar den gemensamma texten om vad lagkaptenen ansvarar för (en punkt
+   per rad). En singleton-rad i captain_info — skapas vid första sparningen. */
+function CaptainInfoManager({
+  supabase,
+  initial,
+}: {
+  supabase: ReturnType<typeof createClient>;
+  initial: CaptainInfo | null;
+}) {
+  const [rowId, setRowId] = useState<string | null>(initial?.id ?? null);
+  const [text, setText] = useState(initial?.responsibilities ?? "");
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function handleSave() {
+    setBusy(true);
+    setMessage(null);
+    const value = text.trim() || null;
+
+    const { data, error } = rowId
+      ? await supabase
+          .from("captain_info")
+          .update({ responsibilities: value })
+          .eq("id", rowId)
+          .select()
+          .single()
+      : await supabase
+          .from("captain_info")
+          .insert({ responsibilities: value })
+          .select()
+          .single();
+
+    if (error) {
+      setMessage(`Kunde inte spara: ${error.message}`);
+    } else {
+      if (data) setRowId(data.id);
+      setMessage("Kaptensansvaret är sparat.");
+    }
+    setBusy(false);
+  }
+
+  return (
+    <section className="mt-10">
+      <h2 className="mb-3 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] font-bold text-base uppercase text-paper">
+        Kaptensansvar
+      </h2>
+
+      <div className="rounded-xl bg-white p-5 shadow-card">
+        <label className="mb-3 block">
+          <span className="mb-1 block text-sm font-bold">
+            Ansvarspunkter{" "}
+            <span className="font-normal text-ink/60">
+              (en punkt per rad — visas på Trupperna-sidan)
+            </span>
+          </span>
+          <textarea
+            rows={5}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={"t.ex.\nVara en god förebild på och utanför plan\nPrata med domaren vid behov\nPeppa laget när det är tungt"}
+            className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
+          />
+        </label>
+
+        {message && (
+          <p className="mb-3 rounded-lg bg-sun px-3 py-2 text-sm font-bold">
+            {message}
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={busy}
+          className="w-full rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] font-bold text-base uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
+        >
+          {busy ? "Sparar…" : "Spara"}
+        </button>
       </div>
     </section>
   );

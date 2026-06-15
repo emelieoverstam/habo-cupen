@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Graduate, Archivo, Ms_Madi } from "next/font/google";
 import "./globals.css";
+import LeaderChatWidget from "@/components/LeaderChatWidget";
 
 // Graduate för rubriker (collegiate/klubbemblem), Archivo för brödtext,
 // Ms Madi för autograferna på spelarkorten.
@@ -42,7 +43,10 @@ export default function RootLayout({
       lang="sv"
       className={`${graduate.variable} ${archivo.variable} ${msMadi.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <LeaderChatWidget />
+      </body>
     </html>
   );
 }
