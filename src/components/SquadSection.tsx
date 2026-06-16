@@ -348,7 +348,7 @@ function PlayerCard({
             <div className="px-1 pb-1 pt-1.5 text-center">
               {/* Namnet som autograf under fotot */}
               <p
-                className={`truncate ${autograph.size} ${autograph.tilt} leading-tight text-ink`}
+                className={`line-clamp-2 min-h-[2lh] ${autograph.size} ${autograph.tilt} leading-tight text-ink`}
                 style={{ fontFamily: autograph.font }}
               >
                 {player.name}
@@ -375,7 +375,7 @@ function PlayerCard({
                   </p>
                 )}
                 <p
-                  className={`w-full truncate ${autograph.sizeBack} ${autograph.tilt} leading-tight text-sun`}
+                  className={`line-clamp-2 w-full ${autograph.sizeBack} ${autograph.tilt} leading-tight text-sun`}
                   style={{ fontFamily: autograph.font }}
                 >
                   {player.name}
