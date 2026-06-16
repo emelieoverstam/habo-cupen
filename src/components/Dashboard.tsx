@@ -314,24 +314,79 @@ export default function Dashboard({
             </p>
           </Link>
 
-          {/* Tjugan */}
+          {/* Matchgenomgångar */}
+          <Link
+            href="/genomgang"
+            className="rise rounded-xl bg-white p-4 shadow-card"
+            style={{ animationDelay: "210ms" }}
+          >
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-ink/50">
+              Matchgenomgångar
+            </p>
+            <p className="text-2xl" aria-hidden>
+              📋
+            </p>
+            <p className="mt-2 text-xs font-semibold text-ink/60">
+              Uppställning &amp; taktik →
+            </p>
+          </Link>
+
+          {/* Poängjakt */}
+          <Link
+            href="/poangjakt"
+            className="rise rounded-xl bg-white p-4 shadow-card"
+            style={{ animationDelay: "240ms" }}
+          >
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-ink/50">
+              Poängjakt
+            </p>
+            <p className="text-2xl" aria-hidden>
+              🎯
+            </p>
+            <p className="mt-2 text-xs font-semibold text-ink/60">
+              Lördag kväll →
+            </p>
+          </Link>
+
+          {/* Musik */}
+          <Link
+            href="/musik"
+            className="rise rounded-xl bg-white p-4 shadow-card"
+            style={{ animationDelay: "270ms" }}
+          >
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-ink/50">
+              Musik
+            </p>
+            <p className="text-2xl" aria-hidden>
+              🎵
+            </p>
+            <p className="mt-2 text-xs font-semibold text-ink/60">
+              Lagets spellista →
+            </p>
+          </Link>
+
+          {/* Tjugan – bred rad längst ner */}
           <Link
             href="/tjugan"
-            className="rise rounded-xl bg-pine p-4 shadow-card"
-            style={{ animationDelay: "210ms" }}
+            className="rise col-span-2 rounded-xl bg-pine p-4 shadow-card"
+            style={{ animationDelay: "300ms" }}
           >
             <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-paper/60">
               Hemliga leken
             </p>
-            <p className="text-2xl" aria-hidden>
-              🪙
-            </p>
-            <p className="mt-2 font-[family-name:var(--font-display)] font-bold text-sm uppercase text-sun">
-              Tjugan
-            </p>
-            <p className="mt-1 text-xs font-semibold text-paper/70">
-              Vem har den? Läs reglerna →
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-3xl" aria-hidden>
+                🪙
+              </p>
+              <div>
+                <p className="font-[family-name:var(--font-display)] font-bold text-sm uppercase text-sun">
+                  Tjugan
+                </p>
+                <p className="mt-0.5 text-xs font-semibold text-paper/70">
+                  Vem har den? Läs reglerna →
+                </p>
+              </div>
+            </div>
           </Link>
         </div>
       </div>
