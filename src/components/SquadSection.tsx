@@ -298,14 +298,6 @@ function PlayerCard({
   const autograph = autographFor(player.id, player.name);
   const flipped = revealActive ? !revealShown : userFlipped;
 
-  // Dela namnet: förnamn på egen rad (lite större), efternamn(en) under.
-  const nameParts = player.name.trim().split(/\s+/);
-  const firstName = nameParts[0] ?? player.name;
-  const lastNames = nameParts.slice(1).join(" ");
-  const firstSize = firstName.length > 12 ? "text-xl" : "text-2xl";
-  const lastSize =
-    lastNames.length > 13 ? "text-base" : lastNames.length > 10 ? "text-lg" : "text-xl";
-
   return (
     <button
       type="button"
@@ -354,20 +346,15 @@ function PlayerCard({
               <span className="card-shine" aria-hidden />
             </div>
             <div className="px-1 pb-1 pt-1.5 text-center">
-              {/* Namnet som autograf under fotot: förnamn på en rad (större),
-                  efternamn under. Fast höjd så alla kort blir lika höga. */}
-              <div
-                className={`flex h-14 flex-col items-center justify-center leading-tight ${autograph.tilt}`}
-                style={{ fontFamily: autograph.font }}
-              >
-                <span className={`whitespace-nowrap ${firstSize} text-ink`}>
-                  {firstName}
-                </span>
-                {lastNames && (
-                  <span className={`whitespace-nowrap ${lastSize} text-ink`}>
-                    {lastNames}
-                  </span>
-                )}
+              {/* Namnet som autograf under fotot. Hela namnet i en autograf som
+                  radbryts vid behov. Fast höjd så alla kort blir lika höga. */}
+              <div className="flex h-14 items-center justify-center">
+                <p
+                  className={`line-clamp-2 ${autograph.size} ${autograph.tilt} leading-tight text-ink`}
+                  style={{ fontFamily: autograph.font }}
+                >
+                  {player.name}
+                </p>
               </div>
               <ClubCrest className="mx-auto mt-1 h-4 w-auto opacity-70" />
               <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-ink/50">
