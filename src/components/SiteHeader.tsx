@@ -7,12 +7,12 @@ import Link from "next/link";
 import ClubCrest from "@/components/ClubCrest";
 
 const TABS = [
+  { href: "/", label: "Hem", key: "hem" },
   { href: "/packlista", label: "Packlista", key: "packlista" },
   { href: "/trupperna", label: "Trupperna", key: "trupperna" },
   { href: "/schema", label: "Schema", key: "schema" },
   { href: "/tabeller", label: "Tabeller", key: "tabeller" },
   { href: "/genomgang", label: "Genomgång", key: "genomgang" },
-  { href: "/", label: "Hem", key: "hem" },
   { href: "/tjugan", label: "Tjugan", key: "tjugan" },
   { href: "/poangjakt", label: "Poängjakt", key: "poangjakt" },
 ] as const;
