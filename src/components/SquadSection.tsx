@@ -313,6 +313,14 @@ function PlayerCard({
   const autograph = autographFor(player.id, player.name);
   const flipped = revealActive ? !revealShown : userFlipped;
 
+  // Förnamn på rad 1, efternamn på rad 2 — samma storlek på båda raderna,
+  // satt efter den längsta delen så det blir jämnt över alla kort.
+  const nameParts = player.name.trim().split(/\s+/);
+  const firstName = nameParts[0] ?? player.name;
+  const lastNames = nameParts.slice(1).join(" ");
+  const longestPart = Math.max(firstName.length, lastNames.length);
+  const nameSize = longestPart > 11 ? "text-2xl" : "text-3xl";
+
   return (
     <button
       type="button"
@@ -331,7 +339,7 @@ function PlayerCard({
         {/* Framsida */}
         <div className="card-face rounded-xl bg-paper p-1.5 shadow-card">
           <div className="rounded-lg border border-sun p-1">
-            <div className="relative aspect-[3/4] overflow-hidden rounded-md bg-pine/15">
+            <div className="relative aspect-[5/7] overflow-hidden rounded-md bg-pine/15">
               {player.photo_url ? (
                 <Image
                   src={player.photo_url}
@@ -369,13 +377,18 @@ function PlayerCard({
             <div className="px-1 pb-1 pt-1.5 text-center">
               {/* Namnet som autograf under fotot. Hela namnet i en autograf som
                   radbryts vid behov. Fast höjd så alla kort blir lika höga. */}
-              <div className="flex h-20 items-center justify-center">
-                <p
-                  className={`${autograph.size} ${autograph.tilt} leading-[1.1] text-ink`}
-                  style={{ fontFamily: autograph.font }}
-                >
-                  {player.name}
-                </p>
+              <div
+                className={`flex h-[4.5rem] flex-col items-center justify-center ${autograph.tilt}`}
+                style={{ fontFamily: autograph.font }}
+              >
+                <span className={`whitespace-nowrap ${nameSize} leading-[1.1] text-ink`}>
+                  {firstName}
+                </span>
+                {lastNames && (
+                  <span className={`whitespace-nowrap ${nameSize} leading-[1.1] text-ink`}>
+                    {lastNames}
+                  </span>
+                )}
               </div>
               {/* Klubbmärke under namnet (lagfärgen visas på nummerbrickan) */}
               <ClubCrest className="mx-auto mt-1.5 h-6 w-auto opacity-80" />
