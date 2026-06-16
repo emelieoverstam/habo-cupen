@@ -30,10 +30,10 @@ function autographFor(id: string, name: string) {
   return {
     font: AUTOGRAPH_FONTS[hash % AUTOGRAPH_FONTS.length],
     tilt: AUTOGRAPH_TILTS[hash % AUTOGRAPH_TILTS.length],
-    // Ms Madi är bred — krymp tidigt så att namnen inte klipps
-    size: name.length > 12 ? "text-xl" : "text-2xl",
+    // Ms Madi är bred — krymp tidigt så att långa namn inte klipps
+    size: name.length > 9 ? "text-2xl" : "text-3xl",
     // Baksidan har mer plats — där får namnet vara ett steg större
-    sizeBack: name.length > 12 ? "text-2xl" : "text-3xl",
+    sizeBack: name.length > 9 ? "text-3xl" : "text-4xl",
   };
 }
 
@@ -348,7 +348,7 @@ function PlayerCard({
             <div className="px-1 pb-1 pt-1.5 text-center">
               {/* Namnet som autograf under fotot. Hela namnet i en autograf som
                   radbryts vid behov. Fast höjd så alla kort blir lika höga. */}
-              <div className="flex h-14 items-center justify-center">
+              <div className="flex h-16 items-center justify-center">
                 <p
                   className={`line-clamp-2 ${autograph.size} ${autograph.tilt} leading-tight text-ink`}
                   style={{ fontFamily: autograph.font }}
