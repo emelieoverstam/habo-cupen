@@ -8,7 +8,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { useScheduleLive } from "@/lib/use-schedule-live";
-import { useCurrentMinute, formatCountdown } from "@/lib/time";
+import { useCurrentMinute } from "@/lib/time";
+import Countdown from "@/components/Countdown";
 import { usePackingProgress } from "@/components/PackingList";
 import { EVENT_META } from "@/lib/event-meta";
 import SiteHeader from "@/components/SiteHeader";
@@ -160,8 +161,8 @@ export default function Dashboard({
               {dayFormat.format(new Date(next.time))}{" "}
               {timeFormat.format(new Date(next.time))} · {next.meta}
             </p>
-            <p className="mt-3 inline-block rounded-lg bg-sun px-4 py-1.5 font-[family-name:var(--font-display)] font-bold text-2xl shadow-chip">
-              {formatCountdown(new Date(next.time).getTime() - now.getTime())}
+            <p className="mt-3 inline-block rounded-lg bg-sun px-4 py-1.5 font-[family-name:var(--font-display)] font-bold text-lg shadow-chip tabular-nums">
+              <Countdown target={next.time} />
             </p>
           </Link>
         )}
