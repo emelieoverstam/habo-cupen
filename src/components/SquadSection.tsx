@@ -319,7 +319,7 @@ function PlayerCard({
   const firstName = nameParts[0] ?? player.name;
   const lastNames = nameParts.slice(1).join(" ");
   const longestPart = Math.max(firstName.length, lastNames.length);
-  const nameSize = longestPart > 11 ? "text-2xl" : "text-3xl";
+  const nameSize = longestPart > 11 ? "text-xl" : "text-2xl";
 
   return (
     <button
@@ -378,7 +378,7 @@ function PlayerCard({
               {/* Namnet som autograf under fotot. Hela namnet i en autograf som
                   radbryts vid behov. Fast höjd så alla kort blir lika höga. */}
               <div
-                className={`flex h-[4.5rem] flex-col items-center justify-center ${autograph.tilt}`}
+                className={`flex h-16 flex-col items-center justify-center ${autograph.tilt}`}
                 style={{ fontFamily: autograph.font }}
               >
                 <span className={`whitespace-nowrap ${nameSize} leading-[1.1] text-ink`}>
