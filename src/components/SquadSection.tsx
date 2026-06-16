@@ -376,15 +376,8 @@ function PlayerCard({
                   {player.name}
                 </p>
               </div>
-              {/* Klubbmärke + lagfärgs-plupp i stället för upprepad lag-text */}
-              <div className="mt-1.5 flex items-center justify-center gap-2">
-                <ClubCrest className="h-6 w-auto opacity-80" />
-                <span
-                  className="inline-block h-3.5 w-3.5 rounded-full border border-ink/30"
-                  style={{ backgroundColor: teamColor }}
-                  aria-label={`Lag ${teamLabel}`}
-                />
-              </div>
+              {/* Klubbmärke under namnet (lagfärgen visas på nummerbrickan) */}
+              <ClubCrest className="mx-auto mt-1.5 h-6 w-auto opacity-80" />
             </div>
           </div>
         </div>
