@@ -370,7 +370,7 @@ function PlayerCard({
                   radbryts vid behov. Fast höjd så alla kort blir lika höga. */}
               <div className="flex h-20 items-center justify-center">
                 <p
-                  className={`line-clamp-2 ${autograph.size} ${autograph.tilt} leading-tight text-ink`}
+                  className={`line-clamp-2 ${autograph.size} ${autograph.tilt} leading-[1.1] text-ink`}
                   style={{ fontFamily: autograph.font }}
                 >
                   {player.name}
