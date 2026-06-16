@@ -14,6 +14,7 @@ const TABS = [
   { href: "/trupperna", label: "Trupperna", key: "trupperna" },
   { href: "/packlista", label: "Packlista", key: "packlista" },
   { href: "/tjugan", label: "Tjugan", key: "tjugan" },
+  { href: "/poangjakt", label: "Poängjakt", key: "poangjakt" },
 ] as const;
 
 export type SiteTab = (typeof TABS)[number]["key"];
