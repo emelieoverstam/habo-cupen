@@ -11,9 +11,11 @@ import type { Tables } from "@/types/database";
 export default function SquadView({
   initialPlayers,
   teams,
+  captainsRevealed,
 }: {
   initialPlayers: Tables<"players">[];
   teams: Tables<"teams">[];
+  captainsRevealed: boolean;
 }) {
   const [players, setPlayers] = useState(initialPlayers);
 
@@ -28,5 +30,11 @@ export default function SquadView({
 
   useScheduleLive(refresh);
 
-  return <SquadSection players={players} teams={teams} />;
+  return (
+    <SquadSection
+      players={players}
+      teams={teams}
+      captainsRevealed={captainsRevealed}
+    />
+  );
 }

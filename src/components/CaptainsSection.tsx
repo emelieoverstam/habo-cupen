@@ -11,10 +11,13 @@ export default function CaptainsSection({
   teams,
   players,
   responsibilities,
+  revealed,
 }: {
   teams: Team[];
   players: Player[];
   responsibilities: string | null;
+  // false = kaptenerna är valda men hålls hemliga ("presenteras senare")
+  revealed: boolean;
 }) {
   const points = toPoints(responsibilities);
   const perTeam = teams
@@ -24,8 +27,10 @@ export default function CaptainsSection({
     }))
     .filter((t) => t.captains.length > 0);
 
+  const hasCaptains = perTeam.length > 0;
+
   // Visa inget alls om varken kaptener eller ansvar är inlagt
-  if (perTeam.length === 0 && points.length === 0) return null;
+  if (!hasCaptains && points.length === 0) return null;
 
   return (
     <section className="mb-8 rounded-2xl bg-white p-4 shadow-card sm:p-5">
@@ -33,7 +38,17 @@ export default function CaptainsSection({
         Kaptener
       </h2>
 
-      {perTeam.length > 0 && (
+      {/* Hemliga tills ledaren väljer att presentera dem */}
+      {hasCaptains && !revealed && (
+        <div className="mb-4 rounded-xl border border-dashed border-ink/20 bg-paper px-4 py-5 text-center">
+          <p className="text-2xl" aria-hidden>
+            🤫
+          </p>
+          <p className="mt-1 text-sm font-bold">Kaptenerna presenteras senare</p>
+        </div>
+      )}
+
+      {hasCaptains && revealed && (
         <div className="mb-4 space-y-2">
           {perTeam.map(({ team, captains }) => (
             <div key={team.id} className="flex flex-wrap items-center gap-2">

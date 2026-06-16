@@ -39,9 +39,11 @@ function autographFor(id: string, name: string) {
 export default function SquadSection({
   players,
   teams,
+  captainsRevealed,
 }: {
   players: Player[];
   teams: Team[];
+  captainsRevealed: boolean;
 }) {
   const teamsWithPlayers = teams.filter((t) =>
     players.some((p) => p.team_id === t.id)
@@ -229,6 +231,7 @@ export default function SquadSection({
                       tilt={index % 2 === 0 ? "card-tilt-l" : "card-tilt-r"}
                       revealActive={revealActive}
                       revealShown={shown}
+                      captainsRevealed={captainsRevealed}
                     />
                   </li>
                 );
@@ -251,12 +254,14 @@ function PlayerCard({
   tilt,
   revealActive,
   revealShown,
+  captainsRevealed,
 }: {
   player: Player;
   teamLabel: string;
   tilt: string;
   revealActive: boolean;
   revealShown: boolean;
+  captainsRevealed: boolean;
 }) {
   const [userFlipped, setUserFlipped] = useState(false);
   const autograph = autographFor(player.id, player.name);
@@ -299,7 +304,7 @@ function PlayerCard({
                   {player.number}
                 </span>
               )}
-              {player.is_captain && (
+              {player.is_captain && captainsRevealed && (
                 <span
                   className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-sun bg-pine font-[family-name:var(--font-display)] font-bold text-base text-sun shadow-chip"
                   aria-label="Kapten"

@@ -26,11 +26,16 @@ export default async function TruppernaPage() {
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-16">
       <SiteHeader active="trupperna" />
-      <SquadView initialPlayers={players ?? []} teams={teams ?? []} />
+      <SquadView
+        initialPlayers={players ?? []}
+        teams={teams ?? []}
+        captainsRevealed={captainInfo?.captains_revealed ?? false}
+      />
       <CaptainsSection
         teams={teams ?? []}
         players={players ?? []}
         responsibilities={captainInfo?.responsibilities ?? null}
+        revealed={captainInfo?.captains_revealed ?? false}
       />
     </main>
   );

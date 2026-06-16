@@ -1554,32 +1554,39 @@ function CaptainInfoManager({
 }) {
   const [rowId, setRowId] = useState<string | null>(initial?.id ?? null);
   const [text, setText] = useState(initial?.responsibilities ?? "");
+  const [revealed, setRevealed] = useState(initial?.captains_revealed ?? false);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function handleSave() {
+  // nextRevealed utelämnad = behåll nuvarande läge
+  async function handleSave(nextRevealed?: boolean) {
     setBusy(true);
     setMessage(null);
     const value = text.trim() || null;
+    const published = nextRevealed ?? revealed;
+    const payload = { responsibilities: value, captains_revealed: published };
 
     const { data, error } = rowId
       ? await supabase
           .from("captain_info")
-          .update({ responsibilities: value })
+          .update(payload)
           .eq("id", rowId)
           .select()
           .single()
-      : await supabase
-          .from("captain_info")
-          .insert({ responsibilities: value })
-          .select()
-          .single();
+      : await supabase.from("captain_info").insert(payload).select().single();
 
     if (error) {
       setMessage(`Kunde inte spara: ${error.message}`);
     } else {
       if (data) setRowId(data.id);
-      setMessage("Kaptensansvaret är sparat.");
+      setRevealed(published);
+      setMessage(
+        nextRevealed === true
+          ? "Kaptenerna är nu presenterade för spelarna."
+          : nextRevealed === false
+            ? "Kaptenerna är dolda – visas som ”presenteras senare”."
+            : "Kaptensansvaret är sparat."
+      );
     }
     setBusy(false);
   }
@@ -1607,6 +1614,24 @@ function CaptainInfoManager({
           />
         </label>
 
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-lg bg-paper px-3 py-2">
+          <span className="text-sm font-bold">
+            {revealed
+              ? "Kaptenerna visas för spelarna"
+              : "Dolda – visas som ”presenteras senare”"}
+          </span>
+          <button
+            type="button"
+            onClick={() => handleSave(!revealed)}
+            disabled={busy}
+            className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50 ${
+              revealed ? "border border-ink/25 bg-white" : "bg-grass"
+            }`}
+          >
+            {revealed ? "Dölj" : "Presentera"}
+          </button>
+        </div>
+
         {message && (
           <p className="mb-3 rounded-lg bg-sun px-3 py-2 text-sm font-bold">
             {message}
@@ -1615,7 +1640,7 @@ function CaptainInfoManager({
 
         <button
           type="button"
-          onClick={handleSave}
+          onClick={() => handleSave()}
           disabled={busy}
           className="w-full rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] font-bold text-base uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
         >

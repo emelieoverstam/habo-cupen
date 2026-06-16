@@ -18,16 +18,19 @@ export type Database = {
     Tables: {
       captain_info: {
         Row: {
+          captains_revealed: boolean
           id: string
           responsibilities: string | null
           updated_at: string
         }
         Insert: {
+          captains_revealed?: boolean
           id?: string
           responsibilities?: string | null
           updated_at?: string
         }
         Update: {
+          captains_revealed?: boolean
           id?: string
           responsibilities?: string | null
           updated_at?: string
