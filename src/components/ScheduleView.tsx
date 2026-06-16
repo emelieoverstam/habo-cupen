@@ -346,7 +346,7 @@ export default function ScheduleView({
               {nextUpcoming.label}
             </span>
             {/* Live-nedräkning på egen rad under titeln – tickar varje sekund */}
-            <span className="mt-1.5 inline-block whitespace-nowrap rounded-lg bg-sun px-2.5 py-1 font-[family-name:var(--font-display)] font-bold text-base leading-none shadow-chip tabular-nums">
+            <span className="mt-1.5 inline-block rounded-lg bg-sun px-2.5 py-1 font-[family-name:var(--font-display)] font-bold text-sm leading-none shadow-chip tabular-nums">
               <Countdown target={nextUpcoming.time} />
             </span>
           </span>

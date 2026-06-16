@@ -49,17 +49,19 @@ export function useCurrentSecond() {
   return secondStamp === null ? null : new Date(secondStamp * 1000);
 }
 
-/* Nedräkning i klockformat: "9d 04:12:30" långt bort, "04:12:30" inom dygnet
-   och "12:30" sista timmen. "nu" när tiden gått ut. */
-export function formatCountdownClock(ms: number) {
+/* Nedräkning i ord ner till sekunder: "9 dagar 4 tim 12 min 30 sek",
+   "4 tim 12 min 30 sek", "12 min 30 sek", "30 sek" eller "nu". */
+export function formatCountdownWords(ms: number) {
   const total = Math.max(0, Math.floor(ms / 1000));
   if (total === 0) return "nu";
   const days = Math.floor(total / 86_400);
   const hours = Math.floor((total % 86_400) / 3_600);
   const minutes = Math.floor((total % 3_600) / 60);
   const seconds = total % 60;
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  if (days > 0) return `${days}d ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-  if (hours > 0) return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-  return `${minutes}:${pad(seconds)}`;
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days} ${days === 1 ? "dag" : "dagar"}`);
+  if (days > 0 || hours > 0) parts.push(`${hours} tim`);
+  if (days > 0 || hours > 0 || minutes > 0) parts.push(`${minutes} min`);
+  parts.push(`${seconds} sek`);
+  return parts.join(" ");
 }
