@@ -37,6 +37,17 @@ function autographFor(id: string, name: string) {
   };
 }
 
+/* Välj läsbar textfärg (mörk/ljus) mot en bakgrundsfärg utifrån enkel luminans. */
+function readableTextColor(hex: string): string {
+  const m = hex.replace("#", "");
+  if (m.length < 6) return "var(--ink)";
+  const r = parseInt(m.slice(0, 2), 16);
+  const g = parseInt(m.slice(2, 4), 16);
+  const b = parseInt(m.slice(4, 6), 16);
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.6 ? "var(--ink)" : "var(--paper)";
+}
+
 export default function SquadSection({
   players,
   teams,
@@ -334,7 +345,13 @@ function PlayerCard({
                 </div>
               )}
               {player.number !== null && (
-                <span className="absolute left-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-sun font-[family-name:var(--font-display)] font-bold text-sm text-ink shadow-chip">
+                <span
+                  className="absolute left-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full border border-ink/15 font-[family-name:var(--font-display)] font-bold text-sm shadow-chip"
+                  style={{
+                    backgroundColor: teamColor,
+                    color: readableTextColor(teamColor),
+                  }}
+                >
                   {player.number}
                 </span>
               )}
