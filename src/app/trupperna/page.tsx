@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import SiteHeader from "@/components/SiteHeader";
 import SquadView from "@/components/SquadView";
 import CaptainsSection from "@/components/CaptainsSection";
+import LeadersSection from "@/components/LeadersSection";
 
 export const metadata: Metadata = {
   title: "Trupperna – Habo-cupen 2026",
@@ -37,6 +38,7 @@ export default async function TruppernaPage() {
         responsibilities={captainInfo?.responsibilities ?? null}
         revealed={captainInfo?.captains_revealed ?? false}
       />
+      <LeadersSection teams={teams ?? []} />
     </main>
   );
 }

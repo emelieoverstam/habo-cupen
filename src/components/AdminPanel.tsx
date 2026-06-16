@@ -188,6 +188,7 @@ export default function AdminPanel({
                 teams={initialTeams}
                 initialPlayers={initialPlayers}
               />
+              <LeadersManager supabase={supabase} teams={initialTeams} />
               <CaptainInfoManager
                 supabase={supabase}
                 initial={initialCaptainInfo}
@@ -1542,6 +1543,87 @@ function BriefingManager({
 }
 
 // ---- Kaptensansvar -----------------------------------------------------
+
+/* Ledare per lag: en enkel namnlista (en rad per namn) som sparas i
+   teams.leaders och visas på Trupperna-sidan. */
+function LeadersManager({
+  supabase,
+  teams,
+}: {
+  supabase: ReturnType<typeof createClient>;
+  teams: Team[];
+}) {
+  const [texts, setTexts] = useState<Record<string, string>>(() =>
+    Object.fromEntries(teams.map((t) => [t.id, t.leaders ?? ""]))
+  );
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function handleSave() {
+    setBusy(true);
+    setMessage(null);
+    const results = await Promise.all(
+      teams.map((t) =>
+        supabase
+          .from("teams")
+          .update({ leaders: texts[t.id]?.trim() || null })
+          .eq("id", t.id)
+      )
+    );
+    const failed = results.find((r) => r.error);
+    setMessage(
+      failed?.error
+        ? `Kunde inte spara: ${failed.error.message}`
+        : "Ledarna är sparade."
+    );
+    setBusy(false);
+  }
+
+  if (teams.length === 0) return null;
+
+  return (
+    <section className="mt-10">
+      <h2 className="mb-3 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] font-bold text-base uppercase text-paper">
+        Ledare
+      </h2>
+
+      <div className="rounded-xl bg-white p-5 shadow-card">
+        {teams.map((t) => (
+          <label key={t.id} className="mb-3 block">
+            <span className="mb-1 block text-sm font-bold">
+              {t.name}{" "}
+              <span className="font-normal text-ink/60">(ett namn per rad)</span>
+            </span>
+            <textarea
+              rows={3}
+              value={texts[t.id] ?? ""}
+              onChange={(e) =>
+                setTexts((s) => ({ ...s, [t.id]: e.target.value }))
+              }
+              placeholder={"t.ex.\nAnna Andersson\nBjörn Björsson"}
+              className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
+            />
+          </label>
+        ))}
+
+        {message && (
+          <p className="mb-3 rounded-lg bg-sun px-3 py-2 text-sm font-bold">
+            {message}
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={busy}
+          className="w-full rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] font-bold text-base uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
+        >
+          {busy ? "Sparar…" : "Spara"}
+        </button>
+      </div>
+    </section>
+  );
+}
 
 /* Redigerar den gemensamma texten om vad lagkaptenen ansvarar för (en punkt
    per rad). En singleton-rad i captain_info — skapas vid första sparningen. */

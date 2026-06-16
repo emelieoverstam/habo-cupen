@@ -57,6 +57,9 @@ export default function SquadSection({
   const [phase, setPhase] = useState<"idle" | "intro" | "playing">("idle");
   // Hur många kort som vänts upp under uppspelningen
   const [revealStage, setRevealStage] = useState(0);
+  // false tills mount-effekten avgjort om revealen ska spelas (döljer truppen
+  // så den inte glimtar förbi innan introt)
+  const [revealDecided, setRevealDecided] = useState(false);
   const [confetti, setConfetti] = useState<ConfettiPiece[] | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -116,7 +119,8 @@ export default function SquadSection({
     }, REVEAL_INTRO_MS);
   }
 
-  // Spela upp automatiskt vid första besöket
+  // Avgör vid mount om revealen ska spelas — innan truppen hinner synas.
+  // Defererat i en timer så att setState inte sker synkront i effekten.
   useEffect(() => {
     let seen = "1";
     try {
@@ -124,8 +128,10 @@ export default function SquadSection({
     } catch {
       seen = "1";
     }
-    if (seen) return;
-    const timer = setTimeout(startReveal, 700);
+    const timer = setTimeout(() => {
+      if (!seen) startReveal();
+      setRevealDecided(true);
+    }, 0);
     return () => clearTimeout(timer);
     // React-kompilatorn memoiserar startReveal åt oss — useCallback här
     // krockar med react-hooks/preserve-manual-memoization
@@ -156,9 +162,13 @@ export default function SquadSection({
     <>
       {confetti && <Confetti pieces={confetti} />}
 
+      {/* Ridå tills mount-effekten avgjort om revealen ska spelas — döljer
+          truppen så den inte glimtar förbi innan introt */}
+      {!revealDecided && <div className="fixed inset-0 z-50 bg-pine" aria-hidden />}
+
       {/* Arenaintro innan korten vänds */}
       {phase === "intro" && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-pine text-center">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-pine px-6 text-center">
           <p
             className="rise text-xs font-bold uppercase tracking-[0.35em] text-paper/70"
             style={{ animationDelay: "150ms" }}
@@ -166,13 +176,13 @@ export default function SquadSection({
             Habo-cupen 2026
           </p>
           <p
-            className="rise font-[family-name:var(--font-display)] font-bold text-4xl uppercase text-sun"
+            className="rise font-[family-name:var(--font-display)] font-bold text-2xl uppercase leading-tight text-sun sm:text-4xl"
             style={{ animationDelay: "450ms" }}
           >
             Laguppställningen
           </p>
           <p
-            className="rise font-[family-name:var(--font-display)] font-bold text-2xl uppercase text-paper"
+            className="rise font-[family-name:var(--font-display)] font-bold text-xl uppercase text-paper sm:text-2xl"
             style={{ animationDelay: "850ms" }}
           >
             BK Zeros

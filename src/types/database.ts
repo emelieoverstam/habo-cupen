@@ -316,16 +316,19 @@ export type Database = {
         Row: {
           color: string
           id: string
+          leaders: string | null
           name: string
         }
         Insert: {
           color: string
           id?: string
+          leaders?: string | null
           name: string
         }
         Update: {
           color?: string
           id?: string
+          leaders?: string | null
           name?: string
         }
         Relationships: []
