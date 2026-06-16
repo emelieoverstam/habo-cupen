@@ -49,46 +49,50 @@ export default function CaptainsSection({
       )}
 
       {hasCaptains && revealed && (
-        <div className="mb-4 space-y-2">
+        <div className="mb-4 space-y-4">
           {perTeam.map(({ team, captains }) => (
-            <div key={team.id} className="flex flex-wrap items-center gap-2">
-              <span
-                className="inline-block h-3 w-3 shrink-0 rounded-full border border-ink/40"
-                style={{ backgroundColor: team.color }}
-                aria-hidden
-              />
-              <span className="text-sm font-bold uppercase tracking-wide text-ink/60">
-                {team.name}
-              </span>
-              {captains.map((c) => (
+            <div key={team.id}>
+              <div className="mb-1.5 flex items-center gap-2">
                 <span
-                  key={c.id}
-                  className="inline-flex items-center gap-2 rounded-full bg-pine py-1 pl-1 pr-3 text-sm font-semibold text-paper"
-                >
-                  <span className="relative shrink-0">
-                    {c.photo_url ? (
-                      <Image
-                        src={c.photo_url}
-                        alt={c.name}
-                        width={36}
-                        height={36}
-                        className="h-9 w-9 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-paper/20 text-base"
-                        aria-hidden
-                      >
-                        ⚽
-                      </span>
-                    )}
-                    <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-pine bg-sun text-[9px] font-bold text-ink">
-                      C
-                    </span>
-                  </span>
-                  {c.name}
+                  className="inline-block h-3 w-3 shrink-0 rounded-full border border-ink/40"
+                  style={{ backgroundColor: team.color }}
+                  aria-hidden
+                />
+                <span className="text-sm font-bold uppercase tracking-wide text-ink/60">
+                  {team.name}
                 </span>
-              ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {captains.map((c) => (
+                  <span
+                    key={c.id}
+                    className="inline-flex items-center gap-2 rounded-full bg-pine py-1 pl-1 pr-3 text-sm font-semibold text-paper"
+                  >
+                    <span className="relative shrink-0">
+                      {c.photo_url ? (
+                        <Image
+                          src={c.photo_url}
+                          alt={c.name}
+                          width={36}
+                          height={36}
+                          className="h-9 w-9 rounded-full object-cover"
+                        />
+                      ) : (
+                        <span
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-paper/20 text-base"
+                          aria-hidden
+                        >
+                          ⚽
+                        </span>
+                      )}
+                      <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-pine bg-sun text-[9px] font-bold text-ink">
+                        C
+                      </span>
+                    </span>
+                    {c.name}
+                  </span>
+                ))}
+              </div>
             </div>
           ))}
         </div>

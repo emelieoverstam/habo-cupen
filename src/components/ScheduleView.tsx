@@ -332,7 +332,7 @@ export default function ScheduleView({
         <button
           type="button"
           onClick={() => setSelectedDay(nextUpcoming.day)}
-          className="mb-5 flex w-full items-center gap-2 rounded-xl bg-white px-4 py-3 text-left shadow-card sm:gap-3"
+          className="mb-5 flex w-full items-center gap-3 rounded-xl bg-white px-4 py-3 text-left shadow-card"
         >
           <span className="text-2xl" aria-hidden>
             {nextUpcoming.emoji}
@@ -344,11 +344,12 @@ export default function ScheduleView({
             <span className="block truncate text-base font-bold leading-tight">
               {nextUpcoming.label}
             </span>
-          </span>
-          <span className="shrink-0 whitespace-nowrap rounded-lg bg-sun px-2.5 py-1 text-center font-[family-name:var(--font-display)] font-bold text-base leading-none shadow-chip sm:px-3 sm:py-1.5 sm:text-lg">
-            {formatCountdown(
-              new Date(nextUpcoming.time).getTime() - now.getTime()
-            )}
+            {/* Tidsangivelsen på egen rad under titeln */}
+            <span className="mt-1.5 inline-block whitespace-nowrap rounded-lg bg-sun px-2.5 py-1 font-[family-name:var(--font-display)] font-bold text-base leading-none shadow-chip">
+              {formatCountdown(
+                new Date(nextUpcoming.time).getTime() - now.getTime()
+              )}
+            </span>
           </span>
         </button>
       )}

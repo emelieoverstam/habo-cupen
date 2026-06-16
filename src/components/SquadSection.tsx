@@ -9,6 +9,7 @@ import {
   makeConfetti,
   type ConfettiPiece,
 } from "@/components/PackingList";
+import { toPoints } from "@/lib/briefing";
 import type { Tables } from "@/types/database";
 
 type Team = Tables<"teams">;
@@ -247,6 +248,26 @@ export default function SquadSection({
                 );
               })}
             </ul>
+
+            {(() => {
+              const leaders = toPoints(team.leaders);
+              if (leaders.length === 0) return null;
+              return (
+                <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                  <span className="text-xs font-bold uppercase tracking-[0.1em] text-paper/55">
+                    Ledare
+                  </span>
+                  {leaders.map((name, i) => (
+                    <span
+                      key={i}
+                      className="rounded-full bg-paper/15 px-2.5 py-0.5 text-sm font-semibold text-paper"
+                    >
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         );
       })}
