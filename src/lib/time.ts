@@ -33,3 +33,35 @@ export function formatCountdown(ms: number) {
   if (hours > 0) return `om ${hours} tim ${minutes} min`;
   return `om ${minutes} min`;
 }
+
+/* Sekundklocka, hydration-säker — för nedräkningar som tickar varje sekund */
+function subscribeSecond(callback: () => void) {
+  const timer = setInterval(callback, 1000);
+  return () => clearInterval(timer);
+}
+
+export function useCurrentSecond() {
+  const secondStamp = useSyncExternalStore(
+    subscribeSecond,
+    () => Math.floor(Date.now() / 1000),
+    () => null
+  );
+  return secondStamp === null ? null : new Date(secondStamp * 1000);
+}
+
+/* Full nedräkning ner till sekunder: "9d 4t 12m 30s", "4t 12m 30s",
+   "12m 30s", "30s" eller "nu". Visar från största enheten ner till sekunder. */
+export function formatCountdownLong(ms: number) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  if (total === 0) return "nu";
+  const days = Math.floor(total / 86_400);
+  const hours = Math.floor((total % 86_400) / 3_600);
+  const minutes = Math.floor((total % 3_600) / 60);
+  const seconds = total % 60;
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (days > 0 || hours > 0) parts.push(`${hours}t`);
+  if (days > 0 || hours > 0 || minutes > 0) parts.push(`${minutes}m`);
+  parts.push(`${seconds}s`);
+  return parts.join(" ");
+}

@@ -8,7 +8,8 @@ import { useCallback, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { EVENT_META } from "@/lib/event-meta";
 import { useScheduleLive } from "@/lib/use-schedule-live";
-import { useCurrentMinute, formatCountdown } from "@/lib/time";
+import { useCurrentMinute } from "@/lib/time";
+import Countdown from "@/components/Countdown";
 import SiteHeader from "@/components/SiteHeader";
 import TeamMarker from "@/components/TeamMarker";
 import type { Tables } from "@/types/database";
@@ -344,11 +345,9 @@ export default function ScheduleView({
             <span className="block truncate text-base font-bold leading-tight">
               {nextUpcoming.label}
             </span>
-            {/* Tidsangivelsen på egen rad under titeln */}
-            <span className="mt-1.5 inline-block whitespace-nowrap rounded-lg bg-sun px-2.5 py-1 font-[family-name:var(--font-display)] font-bold text-base leading-none shadow-chip">
-              {formatCountdown(
-                new Date(nextUpcoming.time).getTime() - now.getTime()
-              )}
+            {/* Live-nedräkning på egen rad under titeln – tickar varje sekund */}
+            <span className="mt-1.5 inline-block whitespace-nowrap rounded-lg bg-sun px-2.5 py-1 font-[family-name:var(--font-display)] font-bold text-base leading-none shadow-chip tabular-nums">
+              <Countdown target={nextUpcoming.time} />
             </span>
           </span>
         </button>
