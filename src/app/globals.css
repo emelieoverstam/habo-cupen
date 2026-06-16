@@ -246,3 +246,30 @@ body {
     display: none;
   }
 }
+
+/* Splash vid start från hemskärmen. Visas bara i app-läge (standalone) så att
+   vanliga webbläsarbesökare aldrig ser den — och därmed ingen glimt. */
+.app-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--pine);
+  transition:
+    opacity 0.45s ease,
+    visibility 0s linear 0.45s;
+}
+
+@media (display-mode: standalone) {
+  .app-splash {
+    display: flex;
+  }
+}
+
+.app-splash--hidden {
+  opacity: 0;
+  visibility: hidden;
+}

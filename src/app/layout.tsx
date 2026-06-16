@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Graduate, Archivo, Ms_Madi } from "next/font/google";
 import "./globals.css";
 import LeaderChatWidget from "@/components/LeaderChatWidget";
+import AppSplash from "@/components/AppSplash";
+import InstallPrompt from "@/components/InstallPrompt";
 
 // Graduate för rubriker (collegiate/klubbemblem), Archivo för brödtext,
 // Ms Madi för autograferna på spelarkorten.
@@ -27,6 +29,17 @@ export const metadata: Metadata = {
   title: "Habo-cupen 2026",
   description:
     "Schema för Habo-cupen 2026 – matcher, mat och allt däremellan. Uppdateras live.",
+  // Gör appen app-lik på iOS när den startas från hemskärmen
+  appleWebApp: {
+    capable: true,
+    title: "Habo-cupen",
+    statusBarStyle: "default",
+  },
+  // Klassisk iOS-flagga för standalone (äldre enheter) vid sidan av Next:s
+  // moderna mobile-web-app-capable
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
 };
 
 export const viewport: Viewport = {
@@ -46,6 +59,8 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
         <LeaderChatWidget />
+        <InstallPrompt />
+        <AppSplash />
       </body>
     </html>
   );
