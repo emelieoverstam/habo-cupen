@@ -12,7 +12,7 @@ const TABS = [
   { href: "/trupperna", label: "Trupperna", key: "trupperna" },
   { href: "/schema", label: "Schema", key: "schema" },
   { href: "/tabeller", label: "Tabeller", key: "tabeller" },
-  { href: "/genomgang", label: "Genomgång", key: "genomgang" },
+  { href: "/genomgang", label: "Matchgenomgångar", key: "genomgang" },
   { href: "/tjugan", label: "Tjugan", key: "tjugan" },
   { href: "/poangjakt", label: "Poängjakt", key: "poangjakt" },
 ] as const;
