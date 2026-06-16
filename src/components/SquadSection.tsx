@@ -34,7 +34,7 @@ function autographFor(id: string, name: string) {
     size: name.length > 15 ? "text-2xl" : name.length > 9 ? "text-3xl" : "text-4xl",
     // Baksidan har mer plats — där får namnet vara ett steg större
     sizeBack:
-      name.length > 15 ? "text-3xl" : name.length > 9 ? "text-4xl" : "text-5xl",
+      name.length > 15 ? "text-2xl" : name.length > 9 ? "text-3xl" : "text-4xl",
   };
 }
 
