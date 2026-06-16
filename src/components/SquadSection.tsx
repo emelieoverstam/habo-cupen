@@ -239,6 +239,7 @@ export default function SquadSection({
                     <PlayerCard
                       player={player}
                       teamLabel={team.name.replace("BK Zeros ", "")}
+                      teamColor={team.color}
                       tilt={index % 2 === 0 ? "card-tilt-l" : "card-tilt-r"}
                       revealActive={revealActive}
                       revealShown={shown}
@@ -282,6 +283,7 @@ export default function SquadSection({
 function PlayerCard({
   player,
   teamLabel,
+  teamColor,
   tilt,
   revealActive,
   revealShown,
@@ -289,6 +291,7 @@ function PlayerCard({
 }: {
   player: Player;
   teamLabel: string;
+  teamColor: string;
   tilt: string;
   revealActive: boolean;
   revealShown: boolean;
@@ -356,10 +359,15 @@ function PlayerCard({
                   {player.name}
                 </p>
               </div>
-              <ClubCrest className="mx-auto mt-1 h-4 w-auto opacity-70" />
-              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-ink/50">
-                BK Zeros · {teamLabel}
-              </p>
+              {/* Klubbmärke + lagfärgs-plupp i stället för upprepad lag-text */}
+              <div className="mt-1.5 flex items-center justify-center gap-2">
+                <ClubCrest className="h-6 w-auto opacity-80" />
+                <span
+                  className="inline-block h-3.5 w-3.5 rounded-full border border-ink/30"
+                  style={{ backgroundColor: teamColor }}
+                  aria-label={`Lag ${teamLabel}`}
+                />
+              </div>
             </div>
           </div>
         </div>
