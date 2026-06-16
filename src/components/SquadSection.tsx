@@ -346,13 +346,16 @@ function PlayerCard({
               <span className="card-shine" aria-hidden />
             </div>
             <div className="px-1 pb-1 pt-1.5 text-center">
-              {/* Namnet som autograf under fotot */}
-              <p
-                className={`line-clamp-2 min-h-[2lh] ${autograph.size} ${autograph.tilt} leading-tight text-ink`}
-                style={{ fontFamily: autograph.font }}
-              >
-                {player.name}
-              </p>
+              {/* Namnet som autograf under fotot. Fast höjd + centrering så att
+                  ett- och tvåradiga namn ger lika höga kort. */}
+              <div className="flex h-14 items-center justify-center">
+                <p
+                  className={`line-clamp-2 ${autograph.size} ${autograph.tilt} leading-tight text-ink`}
+                  style={{ fontFamily: autograph.font }}
+                >
+                  {player.name}
+                </p>
+              </div>
               <ClubCrest className="mx-auto mt-1 h-4 w-auto opacity-70" />
               <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-ink/50">
                 BK Zeros · {teamLabel}
