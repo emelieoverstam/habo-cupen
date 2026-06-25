@@ -277,6 +277,19 @@ export default function PoangjaktView({
                 Bara du som ledare ser uppdragen — de är inte publicerade ännu.
               </p>
             )}
+            <div className="mb-3 rounded-xl bg-white p-3 text-sm shadow-card">
+              <p className="mb-1 font-[family-name:var(--font-display)] font-bold uppercase">
+                📋 Bra att veta
+              </p>
+              <ul className="list-disc space-y-0.5 pl-5 text-ink/80">
+                <li>Visa eller utför uppdraget för en ledare för att få poäng.</li>
+                <li>
+                  <strong>Filmar ni någon – fråga alltid om lov först.</strong>{" "}
+                  Klippen visas bara för en ledare och läggs aldrig ut någonstans.
+                </li>
+                <li>Ni hinner inte allt – välj smart vilka uppdrag ni tar!</li>
+              </ul>
+            </div>
             <p className="mb-2 text-sm font-semibold text-paper/80">
               Din checklista · {doneCount}/{sortedTasks.length} avbockade{" "}
               <span className="font-normal text-paper/50">
