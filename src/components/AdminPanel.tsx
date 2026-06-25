@@ -19,6 +19,13 @@ import {
   parseBriefing,
 } from "@/lib/briefing";
 import MatchPitch from "@/components/MatchPitch";
+import PoangjaktManager from "@/components/PoangjaktManager";
+import type {
+  QuestCompletion,
+  QuestGroup,
+  QuestState,
+  QuestTask,
+} from "@/lib/poangjakt";
 
 type CupEvent = Tables<"events">;
 type Team = Tables<"teams">;
@@ -30,11 +37,12 @@ type Profile = Tables<"profiles">;
 
 // Flikar i admin så att hålltider, trupp och genomgång inte ligger på samma
 // långa sida
-type AdminTab = "events" | "players" | "briefings";
+type AdminTab = "events" | "players" | "briefings" | "poangjakt";
 const TABS: { id: AdminTab; label: string }[] = [
   { id: "events", label: "Hålltider" },
   { id: "players", label: "Trupperna" },
   { id: "briefings", label: "Genomgång" },
+  { id: "poangjakt", label: "Poängjakt" },
 ];
 
 const STATUS_LABELS: Record<EventStatus, string> = {
@@ -103,6 +111,10 @@ export default function AdminPanel({
   initialBriefings,
   initialCaptainInfo,
   initialProfiles,
+  initialQuestTasks,
+  initialQuestGroups,
+  initialQuestCompletions,
+  initialQuestState,
 }: {
   initialEvents: CupEvent[];
   initialTeams: Team[];
@@ -111,6 +123,10 @@ export default function AdminPanel({
   initialBriefings: Briefing[];
   initialCaptainInfo: CaptainInfo | null;
   initialProfiles: Profile[];
+  initialQuestTasks: QuestTask[];
+  initialQuestGroups: QuestGroup[];
+  initialQuestCompletions: QuestCompletion[];
+  initialQuestState: QuestState | null;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<User | null>(null);
@@ -213,6 +229,15 @@ export default function AdminPanel({
               matches={initialMatches}
               initialBriefings={initialBriefings}
               profileName={profileName}
+            />
+          )}
+          {tab === "poangjakt" && (
+            <PoangjaktManager
+              supabase={supabase}
+              initialTasks={initialQuestTasks}
+              initialGroups={initialQuestGroups}
+              initialCompletions={initialQuestCompletions}
+              initialState={initialQuestState}
             />
           )}
         </>

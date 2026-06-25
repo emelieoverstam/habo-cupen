@@ -19,6 +19,10 @@ export default async function AdminPage() {
     { data: briefings },
     { data: captainInfo },
     { data: profiles },
+    { data: questTasks },
+    { data: questGroups },
+    { data: questCompletions },
+    { data: questState },
   ] = await Promise.all([
     supabase
       .from("events")
@@ -35,6 +39,18 @@ export default async function AdminPage() {
     supabase.from("match_briefings").select("*"),
     supabase.from("captain_info").select("*").limit(1).maybeSingle(),
     supabase.from("profiles").select("*").order("name"),
+    supabase
+      .from("quest_tasks")
+      .select("*")
+      .order("sort_hint", { nullsFirst: false })
+      .order("points", { ascending: false }),
+    supabase
+      .from("quest_groups")
+      .select("*")
+      .order("sort_hint", { nullsFirst: false })
+      .order("name"),
+    supabase.from("quest_completions").select("*"),
+    supabase.from("quest_state").select("*").limit(1).maybeSingle(),
   ]);
 
   return (
@@ -46,6 +62,10 @@ export default async function AdminPage() {
       initialBriefings={(briefings ?? []).map(parseBriefing)}
       initialCaptainInfo={captainInfo ?? null}
       initialProfiles={profiles ?? []}
+      initialQuestTasks={questTasks ?? []}
+      initialQuestGroups={questGroups ?? []}
+      initialQuestCompletions={questCompletions ?? []}
+      initialQuestState={questState ?? null}
     />
   );
 }
