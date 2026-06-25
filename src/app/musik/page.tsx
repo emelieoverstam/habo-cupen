@@ -12,6 +12,14 @@ const PLAYLIST_URL =
 const PLAYLIST_EMBED =
   "https://open.spotify.com/embed/playlist/1MX68RTYUwl0VsSYcW5O6e?utm_source=generator";
 
+// Lagets egna AI-låtar (filer ligger i public/ai-latar/)
+const AI_SONGS = [
+  {
+    title: "Zeros tjejer, är ni klara?",
+    src: "/ai-latar/zeros-tjejer-ar-ni-klara.mp3",
+  },
+];
+
 export default function MusikPage() {
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-16">
@@ -48,19 +56,27 @@ export default function MusikPage() {
       </section>
 
       {/* BK Zeros AI-låtar */}
-      <section className="rounded-2xl bg-white p-6 text-center shadow-card sm:p-8">
-        <p className="text-4xl" aria-hidden>
-          🤖🎶
-        </p>
-        <p className="mt-3 inline-block -rotate-2 rounded-lg bg-sun px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-ink shadow-chip">
-          Snart här
-        </p>
-        <h2 className="mt-4 font-[family-name:var(--font-display)] font-bold text-2xl uppercase leading-tight">
-          BK Zeros AI-låtar
+      <section className="rounded-2xl bg-white p-4 shadow-card sm:p-5">
+        <h2 className="font-[family-name:var(--font-display)] font-bold text-lg uppercase">
+          🤖🎶 BK Zeros AI-låtar
         </h2>
-        <p className="mx-auto mt-3 max-w-sm text-base font-semibold text-ink/80">
-          Lagets egna AI-låtar landar här snart. 🎤
+        <p className="mt-1 mb-3 text-sm font-semibold text-ink/70">
+          Lagets egna AI-låtar – spela och peppa!
         </p>
+
+        <ul className="space-y-3">
+          {AI_SONGS.map((song) => (
+            <li key={song.src} className="rounded-xl bg-paper p-3">
+              <p className="mb-2 font-[family-name:var(--font-display)] font-bold text-base">
+                {song.title}
+              </p>
+              <audio controls preload="none" className="w-full">
+                <source src={song.src} type="audio/mpeg" />
+                Din webbläsare kan inte spela upp ljudet.
+              </audio>
+            </li>
+          ))}
+        </ul>
       </section>
     </main>
   );
