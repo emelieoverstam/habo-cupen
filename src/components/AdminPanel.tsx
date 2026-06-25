@@ -1888,15 +1888,20 @@ function NoticeManager({
 
   async function handleDelete(notice: Tables<"notices">) {
     if (!window.confirm("Ta bort notisen?")) return;
-    const { error } = await supabase
-      .from("notices")
-      .delete()
-      .eq("id", notice.id);
-    if (error) {
-      setMessage(`Kunde inte ta bort: ${error.message}`);
-    } else {
-      if (editingId === notice.id) resetForm();
-      await loadData();
+    setBusy(true);
+    try {
+      const { error } = await supabase
+        .from("notices")
+        .delete()
+        .eq("id", notice.id);
+      if (error) {
+        setMessage(`Kunde inte ta bort: ${error.message}`);
+      } else {
+        if (editingId === notice.id) resetForm();
+        await loadData();
+      }
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -2000,7 +2005,8 @@ function NoticeManager({
                   <button
                     type="button"
                     onClick={() => handleDelete(notice)}
-                    className="rounded-full bg-falu px-2.5 py-0.5 text-xs font-bold text-paper transition-transform active:scale-95"
+                    disabled={busy}
+                    className="rounded-full bg-falu px-2.5 py-0.5 text-xs font-bold text-paper transition-transform active:scale-95 disabled:opacity-50"
                   >
                     Ta bort
                   </button>
