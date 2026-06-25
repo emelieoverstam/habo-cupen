@@ -6,7 +6,7 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 
-const ITEMS = [
+const ITEMS: { emoji: string; text: string; isNew?: boolean }[] = [
   { emoji: "⚽", text: "Matchdress" },
   { emoji: "🧦", text: "Matchstrumpor (gärna fler par om man har)" },
   { emoji: "🛡️", text: "Benskydd" },
@@ -51,6 +51,7 @@ const ITEMS = [
     text: "Snacks/Godis/Dryck till lördag kväll (absolut förbjudet med någon form av nötter!)",
   },
   { emoji: "💳", text: "Fickpeng 150 kr (kort/swish – cupen är kontantfri)" },
+  { emoji: "🩱", text: "Badkläder", isNew: true },
 ];
 
 const STORAGE_KEY = "habocupen-packlista";
@@ -227,6 +228,11 @@ export default function PackingList() {
                   >
                     {item.text}
                   </span>
+                  {item.isNew && (
+                    <span className="ml-auto shrink-0 rounded-full bg-sun px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink">
+                      Nytt
+                    </span>
+                  )}
                 </button>
               </li>
             );
