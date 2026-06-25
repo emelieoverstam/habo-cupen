@@ -26,6 +26,7 @@ type Player = Tables<"players">;
 type EventStatus = Enums<"event_status">;
 type Match = Tables<"matches">;
 type CaptainInfo = Tables<"captain_info">;
+type Profile = Tables<"profiles">;
 
 // Flikar i admin så att hålltider, trupp och genomgång inte ligger på samma
 // långa sida
@@ -101,6 +102,7 @@ export default function AdminPanel({
   initialMatches,
   initialBriefings,
   initialCaptainInfo,
+  initialProfiles,
 }: {
   initialEvents: CupEvent[];
   initialTeams: Team[];
@@ -108,11 +110,18 @@ export default function AdminPanel({
   initialMatches: Match[];
   initialBriefings: Briefing[];
   initialCaptainInfo: CaptainInfo | null;
+  initialProfiles: Profile[];
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [tab, setTab] = useState<AdminTab>("events");
+
+  // Konto-id → ledarens namn (för "inloggad som" och "senast ändrad av")
+  const profileName = useMemo(
+    () => new Map(initialProfiles.map((p) => [p.id, p.name])),
+    [initialProfiles]
+  );
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -142,7 +151,7 @@ export default function AdminPanel({
       {!authChecked ? null : user ? (
         <>
           <div className="mb-5 flex items-center justify-between text-sm font-semibold text-paper/80">
-            <span>Inloggad som {user.email}</span>
+            <span>Inloggad som {profileName.get(user.id) ?? user.email}</span>
             <button
               type="button"
               onClick={() => supabase.auth.signOut()}
@@ -179,6 +188,7 @@ export default function AdminPanel({
               supabase={supabase}
               initialEvents={initialEvents}
               initialTeams={initialTeams}
+              profileName={profileName}
             />
           )}
           {tab === "players" && (
@@ -202,11 +212,12 @@ export default function AdminPanel({
               players={initialPlayers}
               matches={initialMatches}
               initialBriefings={initialBriefings}
+              profileName={profileName}
             />
           )}
         </>
       ) : (
-        <LoginForm supabase={supabase} />
+        <LoginForm supabase={supabase} profiles={initialProfiles} />
       )}
     </main>
   );
@@ -214,24 +225,30 @@ export default function AdminPanel({
 
 function LoginForm({
   supabase,
+  profiles,
 }: {
   supabase: ReturnType<typeof createClient>;
+  profiles: Profile[];
 }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const sorted = useMemo(
+    () => [...profiles].sort((a, b) => a.name.localeCompare(b.name, "sv")),
+    [profiles]
+  );
+  const [email, setEmail] = useState(sorted[0]?.login_email ?? "");
+  const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function handleSubmit(e: React.SubmitEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
     const { error: authError } = await supabase.auth.signInWithPassword({
       email,
-      password,
+      password: pin,
     });
     if (authError) {
-      setError("Fel e-post eller lösenord.");
+      setError("Fel PIN-kod. Försök igen.");
     }
     setBusy(false);
   }
@@ -245,25 +262,30 @@ function LoginForm({
         Logga in
       </h2>
       <label className="mb-3 block">
-        <span className="mb-1 block text-sm font-bold">E-post</span>
-        <input
-          type="email"
-          required
-          autoComplete="email"
+        <span className="mb-1 block text-sm font-bold">Vem är du?</span>
+        <select
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
-        />
+        >
+          {sorted.map((p) => (
+            <option key={p.id} value={p.login_email}>
+              {p.name}
+            </option>
+          ))}
+        </select>
       </label>
       <label className="mb-4 block">
-        <span className="mb-1 block text-sm font-bold">Lösenord</span>
+        <span className="mb-1 block text-sm font-bold">PIN-kod</span>
         <input
           type="password"
-          required
+          inputMode="numeric"
           autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
+          required
+          value={pin}
+          onChange={(e) => setPin(e.target.value)}
+          placeholder="••••"
+          className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2 tracking-[0.3em]"
         />
       </label>
       {error && (
@@ -273,7 +295,7 @@ function LoginForm({
       )}
       <button
         type="submit"
-        disabled={busy}
+        disabled={busy || !email}
         className="w-full rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] font-bold text-base uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
       >
         {busy ? "Loggar in…" : "Logga in"}
@@ -286,10 +308,12 @@ function EventManager({
   supabase,
   initialEvents,
   initialTeams,
+  profileName,
 }: {
   supabase: ReturnType<typeof createClient>;
   initialEvents: CupEvent[];
   initialTeams: Team[];
+  profileName: Map<string, string>;
 }) {
   const [events, setEvents] = useState<CupEvent[]>(initialEvents);
   const [teams] = useState<Team[]>(initialTeams);
@@ -538,18 +562,25 @@ function EventManager({
                     className="flex items-center gap-3 rounded-xl bg-white px-3 py-2 shadow-chip"
                   >
                     <span aria-hidden>{EVENT_META[event.type].emoji}</span>
-                    <span className="min-w-0 flex-1 truncate text-sm">
-                      <strong>
-                        {event.starts_at
-                          ? timeFormat.format(new Date(event.starts_at))
-                          : "–"}
-                      </strong>{" "}
-                      {event.title}
-                      {event.status !== "confirmed" && (
-                        <em className="text-ink/60">
-                          {" "}
-                          ({STATUS_LABELS[event.status].toLowerCase()})
-                        </em>
+                    <span className="min-w-0 flex-1 text-sm">
+                      <span className="block truncate">
+                        <strong>
+                          {event.starts_at
+                            ? timeFormat.format(new Date(event.starts_at))
+                            : "–"}
+                        </strong>{" "}
+                        {event.title}
+                        {event.status !== "confirmed" && (
+                          <em className="text-ink/60">
+                            {" "}
+                            ({STATUS_LABELS[event.status].toLowerCase()})
+                          </em>
+                        )}
+                      </span>
+                      {event.updated_by && profileName.get(event.updated_by) && (
+                        <span className="block truncate text-[11px] font-normal text-ink/45">
+                          Ändrad av {profileName.get(event.updated_by)}
+                        </span>
                       )}
                     </span>
                     <button
@@ -1002,12 +1033,14 @@ function BriefingManager({
   players,
   matches,
   initialBriefings,
+  profileName,
 }: {
   supabase: ReturnType<typeof createClient>;
   teams: Team[];
   players: Player[];
   matches: Match[];
   initialBriefings: Briefing[];
+  profileName: Map<string, string>;
 }) {
   const [briefings, setBriefings] = useState<Briefing[]>(initialBriefings);
   const [teamId, setTeamId] = useState<string>(teams[0]?.id ?? "");
@@ -1317,6 +1350,12 @@ function BriefingManager({
                 : "Utkast (dold för spelarna)"}
           </span>
         </div>
+
+        {currentRow?.updated_by && profileName.get(currentRow.updated_by) && (
+          <p className="-mt-2 mb-4 text-xs text-ink/45">
+            Senast ändrad av {profileName.get(currentRow.updated_by)}
+          </p>
+        )}
 
         {prefillSources.length > 0 && (
           <label className="mb-4 block">

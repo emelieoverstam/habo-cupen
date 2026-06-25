@@ -18,6 +18,7 @@ export default async function AdminPage() {
     { data: matches },
     { data: briefings },
     { data: captainInfo },
+    { data: profiles },
   ] = await Promise.all([
     supabase
       .from("events")
@@ -33,6 +34,7 @@ export default async function AdminPage() {
     supabase.from("matches").select("*").order("starts_at"),
     supabase.from("match_briefings").select("*"),
     supabase.from("captain_info").select("*").limit(1).maybeSingle(),
+    supabase.from("profiles").select("*").order("name"),
   ]);
 
   return (
@@ -43,6 +45,7 @@ export default async function AdminPage() {
       initialMatches={matches ?? []}
       initialBriefings={(briefings ?? []).map(parseBriefing)}
       initialCaptainInfo={captainInfo ?? null}
+      initialProfiles={profiles ?? []}
     />
   );
 }

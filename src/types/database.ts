@@ -51,6 +51,7 @@ export type Database = {
           title: string
           type: Database["public"]["Enums"]["event_type"]
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           created_at?: string
@@ -65,6 +66,7 @@ export type Database = {
           title: string
           type: Database["public"]["Enums"]["event_type"]
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           created_at?: string
@@ -79,6 +81,7 @@ export type Database = {
           title?: string
           type?: Database["public"]["Enums"]["event_type"]
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -105,6 +108,7 @@ export type Database = {
           published: boolean
           team_id: string
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           bench?: Json
@@ -120,6 +124,7 @@ export type Database = {
           published?: boolean
           team_id: string
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           bench?: Json
@@ -135,6 +140,7 @@ export type Database = {
           published?: boolean
           team_id?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -248,6 +254,132 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          id: string
+          login_email: string
+          name: string
+        }
+        Insert: {
+          id: string
+          login_email: string
+          name: string
+        }
+        Update: {
+          id?: string
+          login_email?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      quest_completions: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_completions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "quest_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quest_completions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "quest_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quest_groups: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          sort_hint: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          sort_hint?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          sort_hint?: number | null
+        }
+        Relationships: []
+      }
+      quest_state: {
+        Row: {
+          duration_minutes: number
+          id: string
+          started_at: string | null
+          tasks_published: boolean
+          updated_at: string
+        }
+        Insert: {
+          duration_minutes?: number
+          id?: string
+          started_at?: string | null
+          tasks_published?: boolean
+          updated_at?: string
+        }
+        Update: {
+          duration_minutes?: number
+          id?: string
+          started_at?: string | null
+          tasks_published?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quest_tasks: {
+        Row: {
+          created_at: string
+          id: string
+          points: number
+          sort_hint: number | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          points?: number
+          sort_hint?: number | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          points?: number
+          sort_hint?: number | null
+          title?: string
+        }
+        Relationships: []
       }
       standings: {
         Row: {
