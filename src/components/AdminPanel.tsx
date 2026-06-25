@@ -238,6 +238,7 @@ export default function AdminPanel({
               initialGroups={initialQuestGroups}
               initialCompletions={initialQuestCompletions}
               initialState={initialQuestState}
+              players={initialPlayers}
             />
           )}
         </>

@@ -15,6 +15,7 @@ export default async function PoangjaktPage() {
     { data: groups },
     { data: completions },
     { data: state },
+    { data: players },
   ] = await Promise.all([
     supabase
       .from("quest_tasks")
@@ -28,6 +29,7 @@ export default async function PoangjaktPage() {
       .order("name"),
     supabase.from("quest_completions").select("*"),
     supabase.from("quest_state").select("*").limit(1).maybeSingle(),
+    supabase.from("players").select("*"),
   ]);
 
   return (
@@ -36,6 +38,7 @@ export default async function PoangjaktPage() {
       initialGroups={groups ?? []}
       initialCompletions={completions ?? []}
       initialState={state ?? null}
+      initialPlayers={players ?? []}
     />
   );
 }

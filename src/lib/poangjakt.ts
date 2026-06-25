@@ -7,6 +7,25 @@ export type QuestTask = Tables<"quest_tasks">;
 export type QuestGroup = Tables<"quest_groups">;
 export type QuestCompletion = Tables<"quest_completions">;
 export type QuestState = Tables<"quest_state">;
+export type Player = Tables<"players">;
+
+/* Slå upp gruppens medlemmar (member_ids är en jsonb-array med spelar-id).
+   Okända id:n hoppas över. */
+export function groupMembers(memberIds: unknown, players: Player[]): Player[] {
+  const ids = Array.isArray(memberIds) ? (memberIds as string[]) : [];
+  const byId = new Map(players.map((p) => [p.id, p]));
+  return ids
+    .map((id) => byId.get(id))
+    .filter((p): p is Player => !!p);
+}
+
+/* Fördela id:n jämnt (round-robin) i n grupper — för lottningen. Skicka en
+   redan blandad lista för en slumpmässig indelning. */
+export function roundRobin(ids: string[], groupCount: number): string[][] {
+  const buckets: string[][] = Array.from({ length: groupCount }, () => []);
+  ids.forEach((id, i) => buckets[i % groupCount].push(id));
+  return buckets;
+}
 
 /* Har gruppen fått uppdraget godkänt? (för rutnätet i admin) */
 export function isCompleted(

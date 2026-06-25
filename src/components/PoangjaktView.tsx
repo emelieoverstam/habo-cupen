@@ -15,11 +15,13 @@ import { createClient } from "@/lib/supabase/client";
 import { useScheduleLive } from "@/lib/use-schedule-live";
 import { useCurrentSecond } from "@/lib/time";
 import {
+  type Player,
   type QuestCompletion,
   type QuestGroup,
   type QuestState,
   type QuestTask,
   formatClock,
+  groupMembers,
   scoreboard,
   timerView,
 } from "@/lib/poangjakt";
@@ -71,16 +73,19 @@ export default function PoangjaktView({
   initialGroups,
   initialCompletions,
   initialState,
+  initialPlayers,
 }: {
   initialTasks: QuestTask[];
   initialGroups: QuestGroup[];
   initialCompletions: QuestCompletion[];
   initialState: QuestState | null;
+  initialPlayers: Player[];
 }) {
   const [tasks, setTasks] = useState(initialTasks);
   const [groups, setGroups] = useState(initialGroups);
   const [completions, setCompletions] = useState(initialCompletions);
   const [state, setState] = useState(initialState);
+  const [players, setPlayers] = useState(initialPlayers);
   const [isLeader, setIsLeader] = useState(false);
   const now = useCurrentSecond();
 
@@ -96,16 +101,18 @@ export default function PoangjaktView({
 
   const refresh = useCallback(async () => {
     const supabase = createClient();
-    const [t, g, c, s] = await Promise.all([
+    const [t, g, c, s, p] = await Promise.all([
       supabase.from("quest_tasks").select("*"),
       supabase.from("quest_groups").select("*"),
       supabase.from("quest_completions").select("*"),
       supabase.from("quest_state").select("*").limit(1).maybeSingle(),
+      supabase.from("players").select("*"),
     ]);
     if (t.data) setTasks(t.data);
     if (g.data) setGroups(g.data);
     if (c.data) setCompletions(c.data);
     if (s.data) setState(s.data);
+    if (p.data) setPlayers(p.data);
   }, []);
   useScheduleLive(refresh);
 
@@ -205,6 +212,45 @@ export default function PoangjaktView({
           </ol>
         )}
       </section>
+
+      {/* Lagindelning */}
+      {groups.some((g) => groupMembers(g.member_ids, players).length > 0) && (
+        <section className="mb-5">
+          <h2 className="mb-2 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] font-bold text-lg uppercase text-paper">
+            Lagindelning
+          </h2>
+          <div className="space-y-3">
+            {groups.map((g) => {
+              const members = groupMembers(g.member_ids, players);
+              if (members.length === 0) return null;
+              return (
+                <div key={g.id} className="rounded-xl bg-white p-3 shadow-card">
+                  <p className="mb-1.5 flex items-center gap-2 font-[family-name:var(--font-display)] font-bold uppercase">
+                    {g.color && (
+                      <span
+                        className="h-3.5 w-3.5 rounded-full border border-ink/40"
+                        style={{ backgroundColor: g.color }}
+                        aria-hidden
+                      />
+                    )}
+                    {g.name}
+                  </p>
+                  <ul className="flex flex-wrap gap-1.5">
+                    {members.map((m) => (
+                      <li
+                        key={m.id}
+                        className="rounded-full bg-paper px-2.5 py-1 text-sm font-semibold"
+                      >
+                        {m.name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Uppdrag */}
       <section>

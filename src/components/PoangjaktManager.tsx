@@ -10,12 +10,15 @@ import type { createClient } from "@/lib/supabase/client";
 import { useScheduleLive } from "@/lib/use-schedule-live";
 import { useCurrentSecond } from "@/lib/time";
 import {
+  type Player,
   type QuestCompletion,
   type QuestGroup,
   type QuestState,
   type QuestTask,
   formatClock,
+  groupMembers,
   isCompleted,
+  roundRobin,
   timerView,
 } from "@/lib/poangjakt";
 
@@ -32,17 +35,20 @@ export default function PoangjaktManager({
   initialGroups,
   initialCompletions,
   initialState,
+  players,
 }: {
   supabase: SupabaseClient;
   initialTasks: QuestTask[];
   initialGroups: QuestGroup[];
   initialCompletions: QuestCompletion[];
   initialState: QuestState | null;
+  players: Player[];
 }) {
   const [tasks, setTasks] = useState(initialTasks);
   const [groups, setGroups] = useState(initialGroups);
   const [completions, setCompletions] = useState(initialCompletions);
   const [state, setState] = useState(initialState);
+  const [message, setMessage] = useState<string | null>(null);
   const now = useCurrentSecond();
 
   const refresh = useCallback(async () => {
@@ -108,6 +114,36 @@ export default function PoangjaktManager({
   async function deleteGroup(id: string, name: string) {
     if (!window.confirm(`Ta bort gruppen ${name}? Dess poäng nollställs.`)) return;
     await supabase.from("quest_groups").delete().eq("id", id);
+    await refresh();
+  }
+
+  // Lotta om: blanda truppen (spelare med lag) jämnt i de befintliga grupperna
+  async function reLottery() {
+    if (groups.length === 0) {
+      setMessage("Lägg till grupper först.");
+      return;
+    }
+    if (!window.confirm("Lotta om lagen? Nuvarande indelning skrivs över.")) return;
+
+    const ids = players.filter((p) => p.team_id).map((p) => p.id);
+    // Fisher-Yates-blandning
+    for (let i = ids.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [ids[i], ids[j]] = [ids[j], ids[i]];
+    }
+    const ordered = [...groups].sort(
+      (a, b) => (a.sort_hint ?? 0) - (b.sort_hint ?? 0)
+    );
+    const buckets = roundRobin(ids, ordered.length);
+    await Promise.all(
+      ordered.map((g, i) =>
+        supabase
+          .from("quest_groups")
+          .update({ member_ids: buckets[i] })
+          .eq("id", g.id)
+      )
+    );
+    setMessage("Lagen är omlottade.");
     await refresh();
   }
 
@@ -256,29 +292,54 @@ export default function PoangjaktManager({
             +
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={reLottery}
+          disabled={groups.length === 0}
+          className="mb-2 w-full rounded-xl border border-ink/25 bg-paper px-4 py-2.5 font-bold transition-transform active:scale-95 disabled:opacity-50"
+        >
+          🎲 Lotta om lagen
+        </button>
+        {message && (
+          <p className="mb-3 rounded-lg bg-sun px-3 py-2 text-sm font-bold">
+            {message}
+          </p>
+        )}
+
         <ul className="space-y-2">
-          {groups.map((g) => (
-            <li
-              key={g.id}
-              className="flex items-center gap-2 rounded-lg bg-paper px-3 py-2"
-            >
-              {g.color && (
-                <span
-                  className="h-3.5 w-3.5 shrink-0 rounded-full border border-ink/40"
-                  style={{ backgroundColor: g.color }}
-                  aria-hidden
-                />
-              )}
-              <span className="flex-1 truncate font-semibold">{g.name}</span>
-              <button
-                type="button"
-                onClick={() => deleteGroup(g.id, g.name)}
-                className="rounded-full bg-falu px-2.5 py-0.5 text-xs font-bold text-paper"
-              >
-                Ta bort
-              </button>
-            </li>
-          ))}
+          {groups.map((g) => {
+            const members = groupMembers(g.member_ids, players);
+            return (
+              <li key={g.id} className="rounded-lg bg-paper px-3 py-2">
+                <div className="flex items-center gap-2">
+                  {g.color && (
+                    <span
+                      className="h-3.5 w-3.5 shrink-0 rounded-full border border-ink/40"
+                      style={{ backgroundColor: g.color }}
+                      aria-hidden
+                    />
+                  )}
+                  <span className="flex-1 truncate font-semibold">{g.name}</span>
+                  <span className="shrink-0 text-xs text-ink/50">
+                    {members.length} st
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => deleteGroup(g.id, g.name)}
+                    className="rounded-full bg-falu px-2.5 py-0.5 text-xs font-bold text-paper"
+                  >
+                    Ta bort
+                  </button>
+                </div>
+                {members.length > 0 && (
+                  <p className="mt-1 text-xs text-ink/60">
+                    {members.map((m) => m.name).join(", ")}
+                  </p>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </div>
 

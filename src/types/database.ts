@@ -346,6 +346,7 @@ export type Database = {
           color: string | null
           created_at: string
           id: string
+          member_ids: Json
           name: string
           sort_hint: number | null
         }
@@ -353,6 +354,7 @@ export type Database = {
           color?: string | null
           created_at?: string
           id?: string
+          member_ids?: Json
           name: string
           sort_hint?: number | null
         }
@@ -360,6 +362,7 @@ export type Database = {
           color?: string | null
           created_at?: string
           id?: string
+          member_ids?: Json
           name?: string
           sort_hint?: number | null
         }
