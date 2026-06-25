@@ -37,12 +37,13 @@ type Profile = Tables<"profiles">;
 
 // Flikar i admin så att hålltider, trupp och genomgång inte ligger på samma
 // långa sida
-type AdminTab = "events" | "players" | "briefings" | "poangjakt";
+type AdminTab = "events" | "players" | "briefings" | "poangjakt" | "notices";
 const TABS: { id: AdminTab; label: string }[] = [
   { id: "events", label: "Hålltider" },
   { id: "players", label: "Trupperna" },
   { id: "briefings", label: "Genomgång" },
   { id: "poangjakt", label: "Poängjakt" },
+  { id: "notices", label: "Notiser" },
 ];
 
 const STATUS_LABELS: Record<EventStatus, string> = {
@@ -115,6 +116,7 @@ export default function AdminPanel({
   initialQuestGroups,
   initialQuestCompletions,
   initialQuestState,
+  initialNotices,
 }: {
   initialEvents: CupEvent[];
   initialTeams: Team[];
@@ -127,6 +129,7 @@ export default function AdminPanel({
   initialQuestGroups: QuestGroup[];
   initialQuestCompletions: QuestCompletion[];
   initialQuestState: QuestState | null;
+  initialNotices: Tables<"notices">[];
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<User | null>(null);
@@ -239,6 +242,13 @@ export default function AdminPanel({
               initialCompletions={initialQuestCompletions}
               initialState={initialQuestState}
               players={initialPlayers}
+            />
+          )}
+          {tab === "notices" && (
+            <NoticeManager
+              supabase={supabase}
+              initialNotices={initialNotices}
+              initialTeams={initialTeams}
             />
           )}
         </>
@@ -1795,5 +1805,211 @@ function CaptainInfoManager({
         </button>
       </div>
     </section>
+  );
+}
+
+// ---- Notiser -----------------------------------------------------------
+
+const noticeTimeFormat = new Intl.DateTimeFormat("sv-SE", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Europe/Stockholm",
+});
+
+/* Anslagstavla: ledaren skriver fria notiser som kan gälla båda lagen eller
+   ett specifikt lag. Speglar EventManager-mönstret. */
+function NoticeManager({
+  supabase,
+  initialNotices,
+  initialTeams,
+}: {
+  supabase: ReturnType<typeof createClient>;
+  initialNotices: Tables<"notices">[];
+  initialTeams: Team[];
+}) {
+  const [notices, setNotices] = useState<Tables<"notices">[]>(initialNotices);
+  const [teams] = useState<Team[]>(initialTeams);
+  const [body, setBody] = useState("");
+  const [teamId, setTeamId] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const teamById = useMemo(
+    () => new Map(teams.map((t) => [t.id, t])),
+    [teams]
+  );
+
+  const loadData = useCallback(async () => {
+    const { data } = await supabase
+      .from("notices")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (data) setNotices(data);
+  }, [supabase]);
+
+  function resetForm() {
+    setEditingId(null);
+    setBody("");
+    setTeamId("");
+  }
+
+  function startEdit(notice: Tables<"notices">) {
+    setEditingId(notice.id);
+    setBody(notice.body);
+    setTeamId(notice.team_id ?? "");
+    setMessage(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setBusy(true);
+    setMessage(null);
+
+    const payload = { body: body.trim(), team_id: teamId || null };
+
+    const { error } = editingId
+      ? await supabase.from("notices").update(payload).eq("id", editingId)
+      : await supabase.from("notices").insert(payload);
+
+    if (error) {
+      setMessage(`Kunde inte spara: ${error.message}`);
+    } else {
+      setMessage(editingId ? "Notisen är uppdaterad." : "Notisen är tillagd.");
+      resetForm();
+      await loadData();
+    }
+    setBusy(false);
+  }
+
+  async function handleDelete(notice: Tables<"notices">) {
+    if (!window.confirm("Ta bort notisen?")) return;
+    const { error } = await supabase
+      .from("notices")
+      .delete()
+      .eq("id", notice.id);
+    if (error) {
+      setMessage(`Kunde inte ta bort: ${error.message}`);
+    } else {
+      if (editingId === notice.id) resetForm();
+      await loadData();
+    }
+  }
+
+  return (
+    <>
+      <form
+        onSubmit={handleSubmit}
+        className="rise mb-8 rounded-xl bg-white p-5 shadow-card"
+      >
+        <h2 className="mb-4 font-[family-name:var(--font-display)] font-bold text-lg uppercase">
+          {editingId ? "Ändra notis" : "Ny notis"}
+        </h2>
+
+        <label className="mb-3 block">
+          <span className="mb-1 block text-sm font-bold">Meddelande</span>
+          <textarea
+            required
+            rows={3}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="t.ex. Samling vid bussen 17:00 – glöm inte vattenflaskan!"
+            className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
+          />
+        </label>
+
+        <label className="mb-4 block">
+          <span className="mb-1 block text-sm font-bold">Gäller</span>
+          <select
+            value={teamId}
+            onChange={(e) => setTeamId(e.target.value)}
+            className="w-full rounded-lg border border-ink/25 bg-paper px-3 py-2"
+          >
+            <option value="">Båda lagen</option>
+            {teams.map((team) => (
+              <option key={team.id} value={team.id}>
+                {team.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {message && (
+          <p className="mb-3 rounded-lg bg-sun px-3 py-2 text-sm font-bold">
+            {message}
+          </p>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={busy}
+            className="flex-1 rounded-xl bg-grass px-4 py-2.5 font-[family-name:var(--font-display)] font-bold text-base uppercase shadow-chip transition-transform active:scale-95 disabled:opacity-50"
+          >
+            {busy ? "Sparar…" : editingId ? "Spara ändringar" : "Lägg till"}
+          </button>
+          {editingId && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="rounded-xl border border-ink/25 bg-paper px-4 py-2.5 font-bold transition-transform active:scale-95"
+            >
+              Avbryt
+            </button>
+          )}
+        </div>
+      </form>
+
+      <h2 className="mb-3 inline-block border-b-2 border-sun pb-0.5 font-[family-name:var(--font-display)] font-bold text-base uppercase text-paper">
+        Inlagda notiser
+      </h2>
+      {notices.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-paper/30 px-4 py-6 text-center font-semibold text-paper/70">
+          Inga notiser inlagda ännu.
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {notices.map((notice) => {
+            const team = notice.team_id
+              ? teamById.get(notice.team_id)
+              : undefined;
+            return (
+              <li
+                key={notice.id}
+                className="rounded-xl bg-white px-3 py-2.5 shadow-chip"
+              >
+                <p className="text-sm font-semibold whitespace-pre-wrap">
+                  {notice.body}
+                </p>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <span className="text-xs text-ink/55">
+                    {team ? team.name : "Båda lagen"} ·{" "}
+                    {noticeTimeFormat.format(new Date(notice.created_at))}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => startEdit(notice)}
+                    className="ml-auto rounded-full bg-sun px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
+                  >
+                    Ändra
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(notice)}
+                    className="rounded-full bg-falu px-2.5 py-0.5 text-xs font-bold text-paper transition-transform active:scale-95"
+                  >
+                    Ta bort
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </>
   );
 }

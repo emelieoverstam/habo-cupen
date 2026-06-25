@@ -23,6 +23,7 @@ export default async function AdminPage() {
     { data: questGroups },
     { data: questCompletions },
     { data: questState },
+    { data: notices },
   ] = await Promise.all([
     supabase
       .from("events")
@@ -51,6 +52,7 @@ export default async function AdminPage() {
       .order("name"),
     supabase.from("quest_completions").select("*"),
     supabase.from("quest_state").select("*").limit(1).maybeSingle(),
+    supabase.from("notices").select("*").order("created_at", { ascending: false }),
   ]);
 
   return (
@@ -66,6 +68,7 @@ export default async function AdminPage() {
       initialQuestGroups={questGroups ?? []}
       initialQuestCompletions={questCompletions ?? []}
       initialQuestState={questState ?? null}
+      initialNotices={notices ?? []}
     />
   );
 }
