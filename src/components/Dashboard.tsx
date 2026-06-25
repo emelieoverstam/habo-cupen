@@ -14,6 +14,7 @@ import { usePackingProgress } from "@/components/PackingList";
 import { EVENT_META } from "@/lib/event-meta";
 import SiteHeader from "@/components/SiteHeader";
 import TeamMarker from "@/components/TeamMarker";
+import NoticeBanner from "@/components/NoticeBanner";
 import type { Tables } from "@/types/database";
 
 type Team = Tables<"teams">;
@@ -21,6 +22,7 @@ type CupEvent = Tables<"events">;
 type Match = Tables<"matches">;
 type Standing = Tables<"standings">;
 type Player = Tables<"players">;
+type Notice = Tables<"notices">;
 
 type Props = {
   initialTeams: Team[];
@@ -28,6 +30,7 @@ type Props = {
   initialMatches: Match[];
   initialStandings: Standing[];
   initialPlayers: Player[];
+  initialNotices: Notice[];
 };
 
 const timeFormat = new Intl.DateTimeFormat("sv-SE", {
@@ -52,18 +55,20 @@ export default function Dashboard({
   initialMatches,
   initialStandings,
   initialPlayers,
+  initialNotices,
 }: Props) {
   const [events, setEvents] = useState(initialEvents);
   const [matches, setMatches] = useState(initialMatches);
   const [standings, setStandings] = useState(initialStandings);
   const [players, setPlayers] = useState(initialPlayers);
   const [teams] = useState(initialTeams);
+  const [notices, setNotices] = useState(initialNotices);
   const now = useCurrentMinute();
   const [packed, packTotal] = usePackingProgress();
 
   const refresh = useCallback(async () => {
     const supabase = createClient();
-    const [eventsRes, matchesRes, standingsRes, playersRes] =
+    const [eventsRes, matchesRes, standingsRes, playersRes, noticesRes] =
       await Promise.all([
         supabase.from("events").select("*"),
         supabase.from("matches").select("*"),
@@ -72,11 +77,16 @@ export default function Dashboard({
           .from("players")
           .select("*")
           .order("number", { nullsFirst: false }),
+        supabase
+          .from("notices")
+          .select("*")
+          .order("created_at", { ascending: false }),
       ]);
     if (eventsRes.data) setEvents(eventsRes.data);
     if (matchesRes.data) setMatches(matchesRes.data);
     if (standingsRes.data) setStandings(standingsRes.data);
     if (playersRes.data) setPlayers(playersRes.data);
+    if (noticesRes.data) setNotices(noticesRes.data);
   }, []);
 
   useScheduleLive(refresh);
@@ -143,6 +153,8 @@ export default function Dashboard({
   return (
     <main className="mx-auto w-full max-w-xl px-4 pb-16">
       <SiteHeader active="hem" />
+
+      <NoticeBanner notices={notices} teams={teams} />
 
       <div className="space-y-4">
         {/* Hjältekort: nästa händelse med stor nedräkning */}
