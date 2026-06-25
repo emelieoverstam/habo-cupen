@@ -4,7 +4,13 @@
 // Uppdragen visas bara om de är publicerade ELLER om man är inloggad ledare.
 // Allt uppdateras live via broadcast-kanalen.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useScheduleLive } from "@/lib/use-schedule-live";
 import { useCurrentSecond } from "@/lib/time";
@@ -18,6 +24,47 @@ import {
   timerView,
 } from "@/lib/poangjakt";
 import SiteHeader from "@/components/SiteHeader";
+
+// Gruppens egen avbockning sparas lokalt på telefonen — påverkar inte poängen,
+// utan är bara ett sätt för gruppen att hålla koll på vad de hunnit.
+const DONE_KEY = "poangjakt-klart";
+
+function subscribeDone(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener(DONE_KEY, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(DONE_KEY, callback);
+  };
+}
+
+/* Hydration-säker läsning av den lokala checklistan: servern och första
+   klientrenderingen ser en tom lista, sedan fylls den på från localStorage. */
+function useDoneSet(): [Set<string>, (taskId: string) => void] {
+  const raw = useSyncExternalStore(
+    subscribeDone,
+    () => localStorage.getItem(DONE_KEY) ?? "",
+    () => ""
+  );
+  const done = useMemo(() => {
+    try {
+      return new Set<string>(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      return new Set<string>();
+    }
+  }, [raw]);
+  const toggle = useCallback(
+    (taskId: string) => {
+      const next = new Set(done);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      localStorage.setItem(DONE_KEY, JSON.stringify([...next]));
+      window.dispatchEvent(new Event(DONE_KEY));
+    },
+    [done]
+  );
+  return [done, toggle];
+}
 
 export default function PoangjaktView({
   initialTasks,
@@ -76,6 +123,10 @@ export default function PoangjaktView({
       ),
     [tasks]
   );
+
+  // Gruppens egen avbockning (lokal på telefonen)
+  const [done, toggleDone] = useDoneSet();
+  const doneCount = sortedTasks.filter((t) => done.has(t.id)).length;
 
   // Vad som visas i den stora nedräkningsrutan
   const clock =
@@ -180,20 +231,49 @@ export default function PoangjaktView({
                 Bara du som ledare ser uppdragen — de är inte publicerade ännu.
               </p>
             )}
+            <p className="mb-2 text-sm font-semibold text-paper/80">
+              Din checklista · {doneCount}/{sortedTasks.length} avbockade{" "}
+              <span className="font-normal text-paper/50">
+                (sparas på den här mobilen)
+              </span>
+            </p>
             <ul className="space-y-2">
-              {sortedTasks.map((task) => (
-                <li
-                  key={task.id}
-                  className="flex items-center gap-3 rounded-xl bg-white px-3 py-2.5 shadow-card"
-                >
-                  <span className="min-w-0 flex-1 font-semibold">
-                    {task.title}
-                  </span>
-                  <span className="shrink-0 rounded-full bg-pine px-2.5 py-0.5 font-[family-name:var(--font-display)] font-bold text-sm text-sun">
-                    {task.points} p
-                  </span>
-                </li>
-              ))}
+              {sortedTasks.map((task) => {
+                const checked = done.has(task.id);
+                return (
+                  <li key={task.id}>
+                    <button
+                      type="button"
+                      onClick={() => toggleDone(task.id)}
+                      aria-pressed={checked}
+                      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left shadow-card transition-colors ${
+                        checked ? "bg-paper" : "bg-white"
+                      }`}
+                    >
+                      <span
+                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 text-sm font-bold ${
+                          checked
+                            ? "border-grass bg-grass text-ink"
+                            : "border-ink/30 text-transparent"
+                        }`}
+                        aria-hidden
+                      >
+                        ✓
+                      </span>
+                      <span
+                        className={`min-w-0 flex-1 font-semibold ${
+                          checked ? "text-ink/45 line-through" : ""
+                        }`}
+                      >
+                        {task.title}
+                      </span>
+                      <span className="shrink-0 rounded-full bg-pine px-2.5 py-0.5 font-[family-name:var(--font-display)] font-bold text-sm text-sun">
+                        {task.points} p
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </>
         )}
