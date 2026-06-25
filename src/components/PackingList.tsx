@@ -52,7 +52,14 @@ const ITEMS: { emoji: string; text: string; isNew?: boolean }[] = [
   },
   { emoji: "💳", text: "Fickpeng 150 kr (kort/swish – cupen är kontantfri)" },
   { emoji: "🩱", text: "Badkläder", isNew: true },
+  { emoji: "⛱️", text: "Paraply för skydd mot solen", isNew: true },
 ];
+
+// Visa nya punkter högst upp men behåll ursprungligt index (avbockningen
+// sparas per index i localStorage). Array.sort är stabil → övrig ordning bevaras.
+const ORDERED_ITEMS = ITEMS.map((item, index) => ({ ...item, index })).sort(
+  (a, b) => Number(b.isNew ?? false) - Number(a.isNew ?? false)
+);
 
 const STORAGE_KEY = "habocupen-packlista";
 const CONFETTI_COLORS = [
@@ -198,13 +205,13 @@ export default function PackingList() {
         )}
 
         <ul className="mt-3 divide-y divide-ink/10">
-          {ITEMS.map((item, index) => {
-            const done = checked.has(index);
+          {ORDERED_ITEMS.map((item) => {
+            const done = checked.has(item.index);
             return (
               <li key={item.text}>
                 <button
                   type="button"
-                  onClick={() => handleToggle(index, done)}
+                  onClick={() => handleToggle(item.index, done)}
                   aria-pressed={done}
                   className="flex w-full items-center gap-3 py-2.5 text-left"
                 >
