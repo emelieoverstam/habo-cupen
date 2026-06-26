@@ -297,7 +297,7 @@ export default function PoangjaktView({
               </span>
             </p>
             <ul className="space-y-2">
-              {sortedTasks.map((task) => {
+              {sortedTasks.map((task, i) => {
                 const checked = done.has(task.id);
                 return (
                   <li key={task.id}>
@@ -318,6 +318,9 @@ export default function PoangjaktView({
                         aria-hidden
                       >
                         ✓
+                      </span>
+                      <span className="w-5 shrink-0 text-center font-[family-name:var(--font-display)] font-bold text-ink/40">
+                        {i + 1}
                       </span>
                       <span
                         className={`min-w-0 flex-1 font-semibold ${

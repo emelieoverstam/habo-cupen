@@ -368,11 +368,14 @@ export default function PoangjaktManager({
           </button>
         </div>
         <ul className="space-y-2">
-          {tasks.map((t) => (
+          {tasks.map((t, i) => (
             <li
               key={t.id}
               className="flex items-center gap-2 rounded-lg bg-paper px-3 py-2"
             >
+              <span className="shrink-0 font-[family-name:var(--font-display)] font-bold text-ink/40">
+                {i + 1}
+              </span>
               <span className="flex-1 truncate font-semibold">{t.title}</span>
               <span className="shrink-0 rounded-full bg-pine px-2 py-0.5 text-xs font-bold text-sun">
                 {t.points} p
@@ -418,10 +421,12 @@ export default function PoangjaktManager({
                 </tr>
               </thead>
               <tbody>
-                {tasks.map((t) => (
+                {tasks.map((t, i) => (
                   <tr key={t.id}>
                     <td className="sticky left-0 z-10 bg-white pr-2 text-sm font-semibold">
-                      <span className="block max-w-40 truncate">{t.title}</span>
+                      <span className="block max-w-40 truncate">
+                        <span className="text-ink/40">{i + 1}.</span> {t.title}
+                      </span>
                       <span className="text-xs text-ink/50">{t.points} p</span>
                     </td>
                     {groups.map((g) => {
