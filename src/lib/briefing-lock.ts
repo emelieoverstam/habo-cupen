@@ -1,13 +1,13 @@
 // Enkel klient-spärr för matchgenomgångarna: döljer dem tills rätt PIN angetts.
 // OBS: detta är en mjuk spärr i gränssnittet — datan finns tekniskt i
 // webbläsaren (matchgenomgångar är publikt läsbara). Den hindrar nyfikna, inte
-// någon som verkligen gräver. PIN sätts i NEXT_PUBLIC_BRIEFING_PIN och låset
-// minns per flik (sessionStorage).
+// någon som verkligen gräver. PIN:en är hårdkodad här (ändras i koden) och
+// låset minns per flik (sessionStorage).
 
 import { useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "f13:briefings-unlocked";
-const PIN = process.env.NEXT_PUBLIC_BRIEFING_PIN ?? "";
+const PIN = "1932";
 
 // Spärren är bara aktiv om en PIN är konfigurerad
 export function pinEnabled(): boolean {
