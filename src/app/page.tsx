@@ -8,7 +8,6 @@ export default async function Home() {
     { data: teams },
     { data: events },
     { data: matches },
-    { data: standings },
     { data: players },
     { data: notices },
   ] = await Promise.all([
@@ -19,7 +18,6 @@ export default async function Home() {
       .order("day")
       .order("starts_at", { nullsFirst: false }),
     supabase.from("matches").select("*").order("starts_at"),
-    supabase.from("standings").select("*").order("position"),
     supabase
       .from("players")
       .select("*")
@@ -35,7 +33,6 @@ export default async function Home() {
       initialTeams={teams ?? []}
       initialEvents={events ?? []}
       initialMatches={matches ?? []}
-      initialStandings={standings ?? []}
       initialPlayers={players ?? []}
       initialNotices={notices ?? []}
     />

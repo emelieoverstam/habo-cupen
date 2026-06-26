@@ -13,14 +13,12 @@ import Countdown from "@/components/Countdown";
 import { usePackingProgress } from "@/components/PackingList";
 import { EVENT_META } from "@/lib/event-meta";
 import SiteHeader from "@/components/SiteHeader";
-import TeamMarker from "@/components/TeamMarker";
 import NoticeBanner from "@/components/NoticeBanner";
 import type { Tables } from "@/types/database";
 
 type Team = Tables<"teams">;
 type CupEvent = Tables<"events">;
 type Match = Tables<"matches">;
-type Standing = Tables<"standings">;
 type Player = Tables<"players">;
 type Notice = Tables<"notices">;
 
@@ -28,7 +26,6 @@ type Props = {
   initialTeams: Team[];
   initialEvents: CupEvent[];
   initialMatches: Match[];
-  initialStandings: Standing[];
   initialPlayers: Player[];
   initialNotices: Notice[];
 };
@@ -44,22 +41,15 @@ const dayFormat = new Intl.DateTimeFormat("sv-SE", {
   timeZone: "Europe/Stockholm",
 });
 
-/* Etiketter för placering: 1:a, 2:a, 3:e, 4:e */
-function positionLabel(position: number) {
-  return position <= 2 ? `${position}:a` : `${position}:e`;
-}
-
 export default function Dashboard({
   initialTeams,
   initialEvents,
   initialMatches,
-  initialStandings,
   initialPlayers,
   initialNotices,
 }: Props) {
   const [events, setEvents] = useState(initialEvents);
   const [matches, setMatches] = useState(initialMatches);
-  const [standings, setStandings] = useState(initialStandings);
   const [players, setPlayers] = useState(initialPlayers);
   const [teams] = useState(initialTeams);
   const [notices, setNotices] = useState(initialNotices);
@@ -68,11 +58,10 @@ export default function Dashboard({
 
   const refresh = useCallback(async () => {
     const supabase = createClient();
-    const [eventsRes, matchesRes, standingsRes, playersRes, noticesRes] =
+    const [eventsRes, matchesRes, playersRes, noticesRes] =
       await Promise.all([
         supabase.from("events").select("*"),
         supabase.from("matches").select("*"),
-        supabase.from("standings").select("*").order("position"),
         supabase
           .from("players")
           .select("*")
@@ -84,7 +73,6 @@ export default function Dashboard({
       ]);
     if (eventsRes.data) setEvents(eventsRes.data);
     if (matchesRes.data) setMatches(matchesRes.data);
-    if (standingsRes.data) setStandings(standingsRes.data);
     if (playersRes.data) setPlayers(playersRes.data);
     if (noticesRes.data) setNotices(noticesRes.data);
   }, []);
@@ -125,28 +113,6 @@ export default function Dashboard({
   }, [events, matches, now]);
 
   const next = upcoming[0] ?? null;
-
-  /* Spelade matcher, senast först */
-  const results = useMemo(
-    () =>
-      matches
-        .filter((m) => m.home_score !== null && m.away_score !== null)
-        .sort((a, b) => ((a.starts_at ?? "") < (b.starts_at ?? "") ? 1 : -1))
-        .slice(0, 3),
-    [matches]
-  );
-
-  /* Våra placeringar ur tabellerna */
-  const ourStandings = useMemo(
-    () =>
-      teams
-        .map((team) => {
-          const row = standings.find((s) => s.team_name === team.name);
-          return row ? { team, row } : null;
-        })
-        .filter((x): x is { team: Team; row: Standing } => x !== null),
-    [teams, standings]
-  );
 
   const photoPlayers = players.filter((p) => p.photo_url !== null).slice(0, 4);
 
@@ -214,62 +180,26 @@ export default function Dashboard({
           </Link>
         )}
 
-        {/* Senaste resultat */}
-        {results.length > 0 && (
-          <div
-            className="rise rounded-xl bg-white p-4 shadow-card"
-            style={{ animationDelay: "90ms" }}
-          >
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-ink/50">
-              Senaste resultat
+        {/* Resultat & tabeller (live på Cupmate) */}
+        <Link
+          href="/tabeller"
+          className="rise block rounded-xl bg-white p-4 shadow-card"
+          style={{ animationDelay: "90ms" }}
+        >
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-ink/50">
+            Resultat &amp; tabeller
+          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-2xl" aria-hidden>
+              📊
             </p>
-            <ul className="space-y-1.5">
-              {results.map((m) => (
-                <li
-                  key={m.id}
-                  className="flex items-center gap-2 text-sm font-semibold"
-                >
-                  <span className="min-w-0 flex-1 truncate">
-                    {m.home_team} – {m.away_team}
-                  </span>
-                  <span className="shrink-0 rounded-md bg-sun px-2 py-0.5 font-[family-name:var(--font-display)] font-bold shadow-chip">
-                    {m.home_score}–{m.away_score}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <p className="text-sm font-semibold text-ink/70">
+              Se ställningen i era grupper – live på Cupmate →
+            </p>
           </div>
-        )}
+        </Link>
 
         <div className="grid grid-cols-2 gap-4">
-          {/* Tabelläge */}
-          <Link
-            href="/tabeller"
-            className="rise rounded-xl bg-white p-4 shadow-card"
-            style={{ animationDelay: "120ms" }}
-          >
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-ink/50">
-              Tabeller
-            </p>
-            {ourStandings.length === 0 ? (
-              <p className="text-sm font-semibold text-ink/60">
-                Kommer när gruppspelet startar.
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {ourStandings.map(({ team, row }) => (
-                  <li key={team.id} className="text-sm">
-                    <TeamMarker team={team} />
-                    <p className="mt-0.5 text-xs font-semibold text-ink/60">
-                      {positionLabel(row.position)} i {row.group_name} ·{" "}
-                      {row.points} p
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Link>
-
           {/* Packstatus */}
           <Link
             href="/packlista"

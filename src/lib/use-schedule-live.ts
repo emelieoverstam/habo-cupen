@@ -1,13 +1,11 @@
 "use client";
 
 // Delad live-koppling: prenumererar på schemakanalen (broadcast från
-// databasen) och pingar Cupmate-synken med jämna mellanrum. Anropar
-// refresh när något ändrats — skurar samlas ihop till en omhämtning.
+// databasen). Anropar refresh när något ändrats — skurar samlas ihop till
+// en omhämtning. (Resultat/tabeller länkas till Cupmate, ingen synk här.)
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-
-const SYNC_INTERVAL_MS = 3 * 60 * 1000;
 
 // Signal i samma flik: när ledar-chatten sparar en ändring uppdateras alla
 // öppna vyer direkt, utan att vänta in Realtime-broadcasten (som främst är
@@ -56,14 +54,4 @@ export function useScheduleLive(refresh: () => void) {
     window.addEventListener(SCHEDULE_CHANGED_EVENT, onLocalChange);
     return () => window.removeEventListener(SCHEDULE_CHANGED_EVENT, onLocalChange);
   }, [queueRefresh]);
-
-  // Pinga synken: servern hämtar bara från Cupmate om datat är äldre än 2 min
-  useEffect(() => {
-    const ping = () => {
-      fetch("/api/sync", { method: "POST" }).catch(() => {});
-    };
-    ping();
-    const timer = setInterval(ping, SYNC_INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, []);
 }

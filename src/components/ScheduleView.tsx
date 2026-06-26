@@ -417,6 +417,22 @@ export default function ScheduleView({
         {headingFormat.format(dayToDate(activeDay))}
       </h2>
 
+      {/* Resultaten finns live på Cupmate (vi länkar i stället för att synka) */}
+      {dayItems.some((i) => i.kind === "match") && (
+        <a
+          href="https://www.cupmate.nu/matcher.php?iCupID=15637&iClassID=21644"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-4 flex items-center gap-2 rounded-xl bg-paper/10 px-4 py-2.5 text-sm font-semibold text-paper/85"
+        >
+          <span aria-hidden>📊</span>
+          Matchresultat &amp; tabeller live på Cupmate
+          <span className="ml-auto" aria-hidden>
+            →
+          </span>
+        </a>
+      )}
+
       {dayItems.length === 0 ? (
         <p className="rounded-xl border border-dashed border-paper/30 px-4 py-8 text-center font-semibold text-paper/70">
           Inget inplanerat den här dagen ännu.
