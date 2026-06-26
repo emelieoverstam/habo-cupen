@@ -181,7 +181,10 @@ export default function AdminPanel({
           </div>
 
           {/* Flikar för att växla mellan sektionerna */}
-          <nav aria-label="Välj sektion" className="mb-6 flex gap-2">
+          <nav
+            aria-label="Välj sektion"
+            className="mb-6 grid grid-cols-3 gap-2 sm:grid-cols-5"
+          >
             {TABS.map((t) => {
               const active = t.id === tab;
               return (
@@ -190,7 +193,7 @@ export default function AdminPanel({
                   type="button"
                   onClick={() => setTab(t.id)}
                   aria-pressed={active}
-                  className={`flex-1 rounded-xl border px-3 py-2 font-[family-name:var(--font-display)] font-bold text-sm uppercase transition-transform active:scale-95 ${
+                  className={`rounded-xl border px-2 py-2 font-[family-name:var(--font-display)] font-bold text-xs uppercase transition-transform active:scale-95 sm:px-3 sm:text-sm ${
                     active
                       ? "border-transparent bg-sun text-ink shadow-chip"
                       : "border-paper/30 bg-paper/10 text-paper hover:bg-paper/20"

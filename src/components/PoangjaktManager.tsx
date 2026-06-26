@@ -151,22 +151,42 @@ export default function PoangjaktManager({
 
   const [taskTitle, setTaskTitle] = useState("");
   const [taskPoints, setTaskPoints] = useState("10");
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
 
-  async function addTask() {
-    const title = taskTitle.trim();
-    if (!title) return;
-    await supabase.from("quest_tasks").insert({
-      title,
-      points: Number(taskPoints) || 0,
-      sort_hint: tasks.length,
-    });
+  function startEditTask(t: QuestTask) {
+    setEditingTaskId(t.id);
+    setTaskTitle(t.title);
+    setTaskPoints(String(t.points));
+    document
+      .getElementById("task-title-input")
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  function resetTaskForm() {
+    setEditingTaskId(null);
     setTaskTitle("");
     setTaskPoints("10");
+  }
+  async function saveTask() {
+    const title = taskTitle.trim();
+    if (!title) return;
+    const points = Number(taskPoints) || 0;
+    if (editingTaskId) {
+      await supabase
+        .from("quest_tasks")
+        .update({ title, points })
+        .eq("id", editingTaskId);
+    } else {
+      await supabase
+        .from("quest_tasks")
+        .insert({ title, points, sort_hint: tasks.length });
+    }
+    resetTaskForm();
     await refresh();
   }
   async function deleteTask(id: string, title: string) {
     if (!window.confirm(`Ta bort uppdraget "${title}"?`)) return;
     await supabase.from("quest_tasks").delete().eq("id", id);
+    if (editingTaskId === id) resetTaskForm();
     await refresh();
   }
 
@@ -348,24 +368,42 @@ export default function PoangjaktManager({
         <h3 className="mb-3 font-[family-name:var(--font-display)] font-bold text-lg uppercase">
           Uppdrag ({tasks.length})
         </h3>
-        <div className="mb-3 flex gap-2">
-          <input
-            type="text"
-            value={taskTitle}
-            onChange={(e) => setTaskTitle(e.target.value)}
-            placeholder="Uppdrag"
-            className={inputClass}
-          />
-          <input
-            type="number"
-            value={taskPoints}
-            onChange={(e) => setTaskPoints(e.target.value)}
-            aria-label="Poäng"
-            className="w-20 shrink-0 rounded-lg border border-ink/25 bg-paper px-2 py-2"
-          />
-          <button type="button" onClick={addTask} className={primaryBtn}>
-            +
-          </button>
+        <div className="mb-3 space-y-2">
+          <div className="flex gap-2">
+            <input
+              id="task-title-input"
+              type="text"
+              value={taskTitle}
+              onChange={(e) => setTaskTitle(e.target.value)}
+              placeholder="Uppdrag"
+              className={inputClass}
+            />
+            <input
+              type="number"
+              value={taskPoints}
+              onChange={(e) => setTaskPoints(e.target.value)}
+              aria-label="Poäng"
+              className="w-20 shrink-0 rounded-lg border border-ink/25 bg-paper px-2 py-2"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={saveTask}
+              className={`${primaryBtn} flex-1`}
+            >
+              {editingTaskId ? "Spara ändringar" : "Lägg till uppdrag"}
+            </button>
+            {editingTaskId && (
+              <button
+                type="button"
+                onClick={resetTaskForm}
+                className="rounded-xl border border-ink/25 bg-paper px-4 py-2.5 font-bold transition-transform active:scale-95"
+              >
+                Avbryt
+              </button>
+            )}
+          </div>
         </div>
         <ul className="space-y-2">
           {tasks.map((t, i) => (
@@ -380,6 +418,13 @@ export default function PoangjaktManager({
               <span className="shrink-0 rounded-full bg-pine px-2 py-0.5 text-xs font-bold text-sun">
                 {t.points} p
               </span>
+              <button
+                type="button"
+                onClick={() => startEditTask(t)}
+                className="rounded-full bg-sun px-2.5 py-0.5 text-xs font-bold transition-transform active:scale-95"
+              >
+                Ändra
+              </button>
               <button
                 type="button"
                 onClick={() => deleteTask(t.id, t.title)}
