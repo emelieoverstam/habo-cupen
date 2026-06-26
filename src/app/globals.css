@@ -273,3 +273,16 @@ body {
   opacity: 0;
   visibility: hidden;
 }
+
+/* Enhetliga formulärkontroller i admin: select renderades lägre (37px) än
+   input (42px) vilket såg ojämnt ut sida vid sida. Ge alla samma höjd och
+   16px text (16px hindrar att iOS zoomar in vid fokus). */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+select,
+textarea {
+  font-size: 1rem;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+select {
+  min-height: 2.75rem;
+}
